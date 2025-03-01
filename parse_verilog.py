@@ -38,9 +38,13 @@ def parse_verilog(file_path):
             port_type = port_match.group(1)
             port_keyword = port_match.group(2) or ''
             port_signed = port_match.group(3) or ''
-            port_width_start = port_match.group(5) or ''
-            port_width_end = port_match.group(6) or ''
+            port_width = port_match.group(4) or ''
             port_name = port_match.group(7)
+            if port_width:
+                port_width_start, port_width_end = port_width[1:-1].split(':')
+            else:
+                port_width_start = ''
+                port_width_end = ''
             ports.append((port_type, port_keyword, port_signed, f"{port_width_start}:{port_width_end}" if port_width_start else '', port_name))
 
         # 如果 body 为 None，则设置为空字符串

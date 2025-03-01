@@ -16,7 +16,6 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-
 def generate_drawio(module_name, ports, submodules, connections):
     """
     生成 Drawio XML 文件
@@ -51,6 +50,12 @@ def generate_drawio(module_name, ports, submodules, connections):
     mxCell_0 = ET.SubElement(root, 'mxCell', {'id': '0'})
     mxCell_1 = ET.SubElement(root, 'mxCell', {'id': '1', 'parent': '0'})
 
+    # 计算模块框的高度和宽度
+    port_height = 30
+    module_height = 50 + (len(ports) * port_height)*0.6
+    max_port_name_length = max(len(port_name) for _, _, _, _, port_name in ports) if ports else 0
+    module_width = max(200, max_port_name_length * 10 + 40)
+
     # 创建主模块方框
     main_module_id = 2
     main_module = ET.SubElement(root, 'mxCell', {
@@ -60,16 +65,16 @@ def generate_drawio(module_name, ports, submodules, connections):
         'vertex': '1',
         'x': '50',
         'y': '50',
-        'width': '200',
-        'height': '200',
+        'width': str(module_width),
+        'height': str(module_height),
         'parent': '1'
     })
     # 添加主模块的 mxGeometry
     main_module_geometry = ET.SubElement(main_module, 'mxGeometry', {
         'x': '50',
         'y': '50',
-        'width': '200',
-        'height': '200',
+        'width': str(module_width),
+        'height': str(module_height),
         'as': 'geometry'
     })
 
@@ -79,19 +84,19 @@ def generate_drawio(module_name, ports, submodules, connections):
     inout_port_y = 70
     next_id = 3
     port_map = {}
-    for port_type, port_name in ports:
+    for port_type, _, _, _, port_name in ports:  # 修改这里，只提取 port_type 和 port_name
         if port_type == 'input':
             x = 50
             y = input_port_y
-            input_port_y += 30
+            input_port_y += port_height
         elif port_type == 'output':
-            x = 250
+            x = module_width - 50
             y = output_port_y
-            output_port_y += 30
+            output_port_y += port_height
         else:  # inout
-            x = 150
+            x = module_width // 2
             y = inout_port_y
-            inout_port_y += 30
+            inout_port_y += port_height
 
         port = ET.SubElement(root, 'mxCell', {
             'id': str(next_id),
@@ -147,60 +152,62 @@ def generate_drawio(module_name, ports, submodules, connections):
         sub_input_port_y = submodule_y + 20
         sub_output_port_y = submodule_y + 20
         sub_inout_port_y = submodule_y + 20
-        for submodule_name_, sub_port, main_port in connections:
-            if submodule_name_ == submodule_name:
-                if sub_port.startswith('input'):
-                    x = submodule_x
-                    y = sub_input_port_y
-                    sub_input_port_y += 20
-                elif sub_port.startswith('output'):
-                    x = submodule_x + 100
-                    y = sub_output_port_y
-                    sub_output_port_y += 20
-                else:  # inout
-                    x = submodule_x + 50
-                    y = sub_inout_port_y
-                    sub_inout_port_y += 20
+        # 注释掉与 connections 相关的部分
+        # for submodule_name_, sub_port, main_port in connections:
+        #     if submodule_name_ == submodule_name:
+        #         if sub_port.startswith('input'):
+        #             x = submodule_x
+        #             y = sub_input_port_y
+        #             sub_input_port_y += 20
+        #         elif sub_port.startswith('output'):
+        #             x = submodule_x + 100
+        #             y = sub_output_port_y
+        #             sub_output_port_y += 20
+        #         else:  # inout
+        #             x = submodule_x + 50
+        #             y = sub_inout_port_y
+        #             sub_inout_port_y += 20
 
-                sub_port_cell = ET.SubElement(root, 'mxCell', {
-                    'id': str(next_id),
-                    'value': sub_port,
-                    'style': 'shape=ellipse;whiteSpace=wrap;html=1;',
-                    'vertex': '1',
-                    'parent': str(submodule_id),
-                    'x': str(x),
-                    'y': str(y),
-                    'width': '10',
-                    'height': '10'
-                })
-                # 添加子模块端口的 mxGeometry
-                sub_port_geometry = ET.SubElement(sub_port_cell, 'mxGeometry', {
-                    'x': str(x),
-                    'y': str(y),
-                    'width': '10',
-                    'height': '10',
-                    'as': 'geometry'
-                })
-                submodule_port_map[submodule_name][sub_port] = next_id
-                next_id += 1
+        #         sub_port_cell = ET.SubElement(root, 'mxCell', {
+        #             'id': str(next_id),
+        #             'value': sub_port,
+        #             'style': 'shape=ellipse;whiteSpace=wrap;html=1;',
+        #             'vertex': '1',
+        #             'parent': str(submodule_id),
+        #             'x': str(x),
+        #             'y': str(y),
+        #             'width': '10',
+        #             'height': '10'
+        #         })
+        #         # 添加子模块端口的 mxGeometry
+        #         sub_port_geometry = ET.SubElement(sub_port_cell, 'mxGeometry', {
+        #             'x': str(x),
+        #             'y': str(y),
+        #             'width': '10',
+        #             'height': '10',
+        #             'as': 'geometry'
+        #         })
+        #         submodule_port_map[submodule_name][sub_port] = next_id
+        #         next_id += 1
 
+    # 注释掉绘制连线的部分
     # 绘制连线
-    for submodule_name, sub_port, main_port in connections:
-        if main_port in port_map and sub_port in submodule_port_map[submodule_name]:
-            edge = ET.SubElement(root, 'mxCell', {
-                'id': str(next_id),
-                'style': 'edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;',
-                'edge': '1',
-                'parent': '1',
-                'source': str(port_map[main_port]),
-                'target': str(submodule_port_map[submodule_name][sub_port])
-            })
-            # 添加连线的 mxGeometry
-            edge_geometry = ET.SubElement(edge, 'mxGeometry', {
-                'relative': '1',
-                'as': 'geometry'
-            })
-            next_id += 1
+    # for submodule_name, sub_port, main_port in connections:
+    #     if main_port in port_map and sub_port in submodule_port_map[submodule_name]:
+    #         edge = ET.SubElement(root, 'mxCell', {
+    #             'id': str(next_id),
+    #             'style': 'edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;',
+    #             'edge': '1',
+    #             'parent': '1',
+    #             'source': str(port_map[main_port]),
+    #             'target': str(submodule_port_map[submodule_name][sub_port])
+    #         })
+    #         # 添加连线的 mxGeometry
+    #         edge_geometry = ET.SubElement(edge, 'mxGeometry', {
+    #             'relative': '1',
+    #             'as': 'geometry'
+    #         })
+    #         next_id += 1
 
     # 保存 Drawio 文件
     tree = ET.ElementTree(mxfile)

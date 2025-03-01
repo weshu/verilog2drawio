@@ -19,13 +19,14 @@ def main(verilog_file_path, debug=False):
             print(f"  Ports: {ports}")
             print(f"  Submodules: {submodules}")
             print(f"  Connections: {connections}")
-            if debug:
-                print(f"Debug mode enabled, skipping generate_drawio for {module_name}")
-            else:
-                generate_drawio(module_name, ports, submodules, connections)
     except Exception as e:
-        print(f"Error processing file {verilog_file_path}: {e}")
+        print(f"Error parsing file {verilog_file_path}: {e}")
         sys.exit(1)
+
+    if debug:
+        print(f"Debug mode enabled, skipping generate_drawio for {module_name}")
+    else:
+        generate_drawio(module_name, ports, submodules, connections)
 
 def run_tests():
     """
