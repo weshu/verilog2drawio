@@ -2,8 +2,10 @@ import re
 import os
 
 # 全局定义正则表达式模式
-module_pattern = re.compile(r'module\s+(\w+)(?:\s*#\s*\((.*?)\))?\s*\((.*?)\)\s*;(.*?)endmodule', re.DOTALL)
-port_pattern = re.compile(r'(input|output|inout)\s*(wire|reg)?\s*(\w+)')
+# 更新 module_pattern 以支持参数化模块和多行端口列表
+module_pattern = re.compile(r'module\s+(\w+)(?:\s*#\s*\((.*?)\))?[\s\n]*(\((.*?)\))?;(.*?)endmodule', re.DOTALL)
+# 更新 port_pattern 以支持带位宽和 signed 关键字的端口声明
+port_pattern = re.compile(r'\s*(input|output|inout)\s*(wire|reg)?\s*(signed|unsigned)?\s*(\[(\d+):(\d+)\])?\s*(\w+)', re.DOTALL)
 submodule_pattern = re.compile(r'(\w+)\s+(\w+)\s*\((.*?)\);', re.DOTALL)
 connection_pattern = re.compile(r'\.(.*?)\((.*?)\)')
 
@@ -20,14 +22,30 @@ def parse_verilog(file_path):
     for match in module_pattern.finditer(content):
         module_name = match.group(1)
         ports_str = match.group(3)
-        body = match.group(4)
+        body = match.group(5)
+
+        # 如果 ports_str 为 None 或为空字符串，则从 body 中提取端口信息
+        if ports_str is None or ports_str.strip() == "":
+            ports_str = body
+        if ports_str is None:
+            ports_str = ""
+        if (0):
+            print(f"Ports: {ports_str}")
 
         # 提取端口信息
         ports = []
         for port_match in port_pattern.finditer(ports_str):
             port_type = port_match.group(1)
-            port_name = port_match.group(3)
-            ports.append((port_type, port_name))
+            port_keyword = port_match.group(2) or ''
+            port_signed = port_match.group(3) or ''
+            port_width_start = port_match.group(5) or ''
+            port_width_end = port_match.group(6) or ''
+            port_name = port_match.group(7)
+            ports.append((port_type, port_keyword, port_signed, f"{port_width_start}:{port_width_end}" if port_width_start else '', port_name))
+
+        # 如果 body 为 None，则设置为空字符串
+        if body is None:
+            body = ""
 
         # 提取子模块信息
         submodules = []
