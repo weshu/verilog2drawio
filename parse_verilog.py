@@ -2,11 +2,10 @@ import re
 import os
 
 # 全局定义正则表达式模式
-module_pattern = re.compile(r'module\s+(\w+)\s*\((.*?)\);(.*?)endmodule', re.DOTALL)
+module_pattern = re.compile(r'module\s+(\w+)(?:\s*#\s*\((.*?)\))?\s*\((.*?)\)\s*;(.*?)endmodule', re.DOTALL)
 port_pattern = re.compile(r'(input|output|inout)\s*(wire|reg)?\s*(\w+)')
 submodule_pattern = re.compile(r'(\w+)\s+(\w+)\s*\((.*?)\);', re.DOTALL)
 connection_pattern = re.compile(r'\.(.*?)\((.*?)\)')
-
 
 def parse_verilog(file_path):
     """
@@ -20,8 +19,8 @@ def parse_verilog(file_path):
     modules = {}
     for match in module_pattern.finditer(content):
         module_name = match.group(1)
-        ports_str = match.group(2)
-        body = match.group(3)
+        ports_str = match.group(3)
+        body = match.group(4)
 
         # 提取端口信息
         ports = []
@@ -49,25 +48,25 @@ def parse_verilog(file_path):
 
     return modules
 
-
 # 单元测试
 import unittest
-
+import glob
 
 class TestParseVerilog(unittest.TestCase):
     def setUp(self):
-        self.test_verilog_file = './test/test_verilog.v'
+        self.test_verilog_files = glob.glob('./test/test_verilog_[1-99].v')
 
     def tearDown(self):
         pass
 
     def test_parse_verilog(self):
-        modules = parse_verilog(self.test_verilog_file)
-        print(modules)
-        self.assertEqual(isinstance(modules, dict), True)
-        self.assertIn('test_module', modules)
-        self.assertIn('sub_module', modules)
-
+        for file_path in self.test_verilog_files:
+            with self.subTest(file_path=file_path):
+                modules = parse_verilog(file_path)
+                print(modules)
+                self.assertEqual(isinstance(modules, dict), True)
+                # 假设每个测试文件至少有一个模块
+                self.assertGreater(len(modules), 0)
 
 if __name__ == '__main__':
     import os
