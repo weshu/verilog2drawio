@@ -1,13 +1,18 @@
 import re
 import os
+import copy
 
 # 全局定义正则表达式模式
 # 更新 module_pattern 以支持参数化模块和多行端口列表
 module_pattern = re.compile(r'module\s+(\w+)(?:\s*#\s*\((.*?)\))?[\s\n]*(\((.*?)\))?;(.*?)endmodule', re.DOTALL)
 # 更新 port_pattern 以支持带位宽和 signed 关键字的端口声明
 port_pattern = re.compile(r'\s*(input|output|inout)\s*(wire|reg)?\s*(signed|unsigned)?\s*(\[(\d+):(\d+)\])?\s*(\w+)', re.DOTALL)
-submodule_pattern = re.compile(r'(\w+)\s+(\w+)\s*\((.*?)\);', re.DOTALL)
+# 更新 submodule_pattern 以确保它只匹配子模块实例化语句，包括参数化部分
+submodule_pattern = re.compile(r'(\w+)\s+(#\s*\(.*?\)\s+)?(\w+)\s*\((.*?)\);', re.DOTALL)
 connection_pattern = re.compile(r'\.(.*?)\((.*?)\)')
+generate_pattern = re.compile(r'generate\s*(.*?)\s*endgenerate', re.DOTALL)
+if_pattern = re.compile(r'if\s*\((.*?)\)\s*(begin)?\s*(.*?)\s*(end)', re.DOTALL)
+else_pattern = re.compile(r'else\s*(begin)?\s*(.*?)\s*(end)?', re.DOTALL)
 
 def parse_verilog(file_path):
     """
@@ -21,8 +26,22 @@ def parse_verilog(file_path):
     modules = {}
     for match in module_pattern.finditer(content):
         module_name = match.group(1)
+        params_str = match.group(2)
         ports_str = match.group(3)
         body = match.group(5)
+
+        # 提取参数默认值
+        params = {}
+        if params_str:
+            for param in params_str.split(','):
+                param = param.strip()
+                if '=' in param:
+                    param_name, param_default = param.split('=')
+                    # 去除字符串两端的空白字符，然后按空白字符（空格、制表符等）分割字符串
+                    param_parts = param_name.strip().split()
+                    if len(param_parts) > 1 and param_parts[0] == "parameter":
+                        param_name = param_parts[1]
+                        params[param_name.strip()] = param_default.strip()
 
         # 如果 ports_str 为 None 或为空字符串，则从 body 中提取端口信息
         if ports_str is None or ports_str.strip() == "":
@@ -47,28 +66,71 @@ def parse_verilog(file_path):
                 port_width_end = ''
             ports.append((port_type, port_keyword, port_signed, f"{port_width_start}:{port_width_end}" if port_width_start else '', port_name))
 
-        # 如果 body 为 None，则设置为空字符串
-        if body is None:
-            body = ""
-
-        # 提取子模块信息
-        submodules = []
-        connections = []
-        for submodule_match in submodule_pattern.finditer(body):
-            submodule_type = submodule_match.group(1)
-            submodule_name = submodule_match.group(2)
-            submodules.append((submodule_type, submodule_name))
-
-            # 提取连接信息
-            connections_str = submodule_match.group(3)
-            for conn_match in connection_pattern.finditer(connections_str):
-                sub_port = conn_match.group(1)
-                main_port = conn_match.group(2)
-                connections.append((submodule_name, sub_port, main_port))
+        # 提取子模块信息和连接信息
+        submodules, connections = extract_submodules_and_connections(body, params)
 
         modules[module_name] = (ports, submodules, connections)
 
     return modules
+
+def extract_submodules_and_connections(body, params):
+    submodules = []
+    connections = []
+
+    generate_matches = list(generate_pattern.finditer(body))
+    previous_end = 0
+
+    for generate_match in generate_matches:
+        # 处理 generate 块之前的文本
+        body_to_parse = body[previous_end:generate_match.start()]
+        extract_submodules_and_connections_from_body(body_to_parse, submodules, connections)
+        # 处理 generate 块内部的文本
+        generate_body = copy.deepcopy(generate_match.group(1))  # 使用深拷贝
+        if_match = if_pattern.search(generate_body)
+
+        if if_match:
+            condition = if_match.group(1)
+            if_body = copy.deepcopy(if_match.group(3))
+            else_match = else_pattern.search(generate_body)
+            else_body = copy.deepcopy(else_match.group(2)) if else_match else ""
+
+            # 安全地评估条件表达式
+            if safe_eval(condition, params):
+                body_to_parse = if_body
+            else:
+                body_to_parse = else_body
+        else:
+            body_to_parse = generate_body
+
+        extract_submodules_and_connections_from_body(body_to_parse, submodules, connections)
+        # 更新 previous_end 为当前 generate 块的结束位置
+        previous_end = generate_match.end()
+
+    # 处理最后一个 generate 块之后的文本
+    body_to_parse = body[previous_end:]
+    extract_submodules_and_connections_from_body(body_to_parse, submodules, connections)
+    return submodules, connections
+
+def extract_submodules_and_connections_from_body(body, submodules, connections):
+    for submodule_match in submodule_pattern.finditer(body):
+        submodule_type = submodule_match.group(1)
+        submodule_name = submodule_match.group(3)
+        submodules.append((submodule_type, submodule_name))
+
+        # 提取连接信息
+        connections_str = submodule_match.group(4)
+        for conn_match in connection_pattern.finditer(connections_str):
+            sub_port = conn_match.group(1)
+            main_port = conn_match.group(2)
+            connections.append((submodule_name, sub_port, main_port))
+
+def safe_eval(condition, params):
+    # 简单的条件判断，仅支持常量条件
+    try:
+        return eval(params[condition], {}, params)
+    except Exception as e:
+        print(f"Error evaluating condition: {condition}, {e}")
+        return False
 
 # 单元测试
 import unittest

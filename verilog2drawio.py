@@ -16,9 +16,9 @@ def main(verilog_file_path, debug=False):
         for module_name, (ports, submodules, connections) in modules.items():
             # 打印模块信息
             print(f"Module: {module_name}")
-            print(f"  Ports: {ports}")
+            # print(f"  Ports: {ports}")
             print(f"  Submodules: {submodules}")
-            print(f"  Connections: {connections}")
+            # print(f"  Connections: {connections}")
     except Exception as e:
         print(f"Error parsing file {verilog_file_path}: {e}")
         sys.exit(1)
