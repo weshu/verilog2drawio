@@ -5,15 +5,18 @@
             Drop Verilog file here or click to upload
             <input type="file" name="file" id="file-input" hidden onchange="handleUpload()" />
         </div>
-        <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput(); handleUpload()">Upload</button>
+        <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput(); handleUpload()">Or Click to Open an Upload Dialog</button>
     </form>
-    {% if filename %}
-    <p>Uploaded File: {{ filename }}</p> <!-- 显示已上传文件信息 -->
-    {% else %}
-    <p>No file uploaded yet.</p> <!-- 提示用户未上传文件 -->
-    {% endif %}
-    <!-- 解析并跳转按钮 -->
-    <button class="btn btn-success mt-3" onclick="parseAndContinue()">Parse and Continue</button>
+    <div class="upload-status">
+        {% if filename %}
+        <p>Upload File: {{ filename }}</p>
+        {% else %}
+        <p>No file uploaded yet.</p>
+        {% endif %}
+    </div>
+    <button class="btn btn-success" onclick="parseAndContinue()">
+        <span>Parse and Continue</span>
+    </button>
 </div>
 
 <script>
