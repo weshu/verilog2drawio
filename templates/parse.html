@@ -1,0 +1,11 @@
+<body>
+    <h2>Uploaded Verilog File: {{ filename }}</h2>
+    <pre>{{ file_content }}</pre> <!-- 显示文件内容 -->
+    <a href="/" class="btn btn-primary" onclick="backToUpload()">Back to Upload</a>
+    <script>
+        function backToUpload() {
+            const filename = "{{ filename }}";
+            window.location.href = `/?filename=${filename}`;
+        }
+    </script>
+</body>

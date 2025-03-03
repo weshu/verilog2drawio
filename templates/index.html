@@ -1,0 +1,151 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verilog to Draw.io</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <style>
+        html, body {
+            height: 98%;
+            margin: 0;
+        }
+        .d-flex {
+            height: calc(98% - 112px); /* Subtract header and footer height */
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header style="background-color: #0074D9; color: white;" class="text-white p-3">
+        <h1>Verilog to Draw.io Converter</h1>
+    </header>
+
+    <!-- Main Content -->
+    <div class="d-flex">
+        <!-- Navbar -->
+        <nav style="background-color: rgb(198, 206, 255);" class="flex-column align-items-start p-3" style="width: 20%;">
+            <div class="navbar-nav w-100">
+                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('upload')">Upload Verilog</button>
+                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('port-config')">Port Configuration</button>
+                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('submodule-config')">Submodule Configuration</button>
+                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('generate-drawio')">Generate DrawIO</button>
+            </div>
+        </nav>
+
+        <!-- Main Panel -->
+        <main class="p-3" style="width: 80%; height: 100%;">
+            <!-- Upload Panel -->
+            <div id="upload" class="panel">
+                <h4>Upload Verilog File</h4>
+                <form id="upload-form" method="POST" enctype="multipart/form-data">
+                    <div class="drop-zone" style="border: 2px dashed #ccc; padding: 20px; text-align: center;">
+                        Drop Verilog file here or click to upload
+                        <input type="file" name="file" id="file-input" hidden />
+                    </div>
+                    <button type="button" class="btn btn-primary mt-3" onclick="handleUpload()">Upload</button>
+                </form>
+                {% if filename %}
+                <p>Uploaded File: {{ filename }}</p> <!-- 显示已上传文件信息 -->
+                {% else %}
+                <p>No file uploaded yet.</p> <!-- 提示用户未上传文件 -->
+                {% endif %}
+                <!-- 解析并跳转按钮 -->
+                <button class="btn btn-success mt-3" onclick="parseAndContinue()">Parse and Continue</button>
+            </div> 
+            <!-- Port Configuration Panel -->
+            <div id="port-config" class="panel d-none">
+                <h4>Port Configuration</h4>
+                <ul id="port-list">
+                    <!-- Ports will be dynamically populated here -->
+                </ul>
+                <button class="btn btn-primary" onclick="groupPorts()">Group Selected Ports</button>
+            </div>
+            <!-- Submodule Configuration Panel -->
+            <div id="submodule-config" class="panel d-none">
+                <h4>Submodule Configuration</h4>
+                <ul id="submodule-list">
+                    <!-- Submodules will be dynamically populated here -->
+                </ul>
+                <button class="btn btn-primary" onclick="selectSubmodules()">Select Submodules</button>
+            </div>
+            <!-- Generate DrawIO Panel -->
+            <div id="generate-drawio" class="panel d-none">
+                <h4>Generated DrawIO XML</h4>
+                <pre id="drawio-xml"></pre>
+                <a id="download-link" class="btn btn-success" download="output.drawio">Download DrawIO</a>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background-color: #0074D9; color: white;" class="text-white p-3">
+        <p class="text-center">© 2025 Clounix.com </p>
+    </footer>
+
+    <script>
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.add('d-none'));
+            document.getElementById(panelId).classList.remove('d-none');
+        }
+
+        function handleUpload() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to upload.');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/?filename=' + data.filename; // 修改这里，将文件名作为URL参数传递
+                } else {
+                    alert(data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to upload file');
+            });
+        }
+
+        // Drag and drop functionality
+        const dropZone = document.querySelector('.drop-zone');
+        const fileInput = document.getElementById('file-input');
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '#f0f0f0';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.backgroundColor = '';
+        });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '';
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                const dataTransfer = new DataTransfer(); // 创建 DataTransfer 对象
+                dataTransfer.items.add(file); // 添加文件到 DataTransfer
+                fileInput.files = dataTransfer.files; // 设置 fileInput.files
+                handleUpload();
+            } else {
+                alert('No file detected in the drop event.');
+            }
+        });
+
+        // 解析并跳转逻辑
+        function parseAndContinue() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please upload a Verilog file first.');
+                return;
+            }
+            // 假设上传成功后会跳转到解析页面
+            window.location.href = '/?filename=' + file.name; // 修改这里，将文件名作为URL参数传递
+        }
+    </script>
+</body>
