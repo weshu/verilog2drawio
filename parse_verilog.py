@@ -64,7 +64,13 @@ def parse_verilog(file_path):
             else:
                 port_width_start = ''
                 port_width_end = ''
-            ports.append((port_type, port_keyword, port_signed, f"{port_width_start}:{port_width_end}" if port_width_start else '', port_name))
+            ports.append({
+                'type': port_type,
+                'keyword': port_keyword,
+                'signed': port_signed,
+                'width': f"{port_width_start}:{port_width_end}" if port_width_start else '',
+                'name': port_name
+            })
 
         # 提取子模块信息和连接信息
         submodules, connections = extract_submodules_and_connections(body, params)

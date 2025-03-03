@@ -31,3 +31,20 @@ I want to add an flask web ui for this verilog2drawio app, the python function c
  5. after click the save button, then the group configuration will be saved
  6. then redirect to submodule configuration panel
 
+I'd like to change the display of the port configuration panel:
+1. the port/group display should be a 3 column table
+2. the 1st column is group name, the 2nd column is port name, the 3rd column is port type(nput, output, inout)
+3. each port can not be in more than one group
+4. multiple ports can be selected, and then the group button can be clicked, then the selected ports will be grouped together, and assiged a default group name, grp_id_xxxx, user can edit the name later.
+5. multiple ports can be selected, and then the ungroup button can be clicked, then the selected ports will be ungrouped.
+6. gouped ports displayed together, under the ungrouped ports
+
+the port element is chaged from list to a dict, fix the code in generate_drawio.py that impacted, including the TestGenerateDrawio function. 
+here is the dict code:
+            ports.append({
+                'type': port_type,
+                'keyword': port_keyword,
+                'signed': port_signed,
+                'width': f"{port_width_start}:{port_width_end}" if port_width_start else '',
+                'name': port_name
+            })

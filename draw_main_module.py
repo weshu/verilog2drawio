@@ -5,7 +5,7 @@ def draw_main_module(root, module_name, ports, module_width, module_height):
     绘制主模块和主模块的端口
     :param root: XML 根元素
     :param module_name: 模块名
-    :param ports: 端口列表
+    :param ports: 端口字典列表
     :param module_width: 模块宽度
     :param module_height: 模块高度
     """
@@ -53,7 +53,9 @@ def draw_main_module(root, module_name, ports, module_width, module_height):
     inout_port_y = module_height - 20  # 将 inout 端口放置在模块框的底部
     next_id = main_module_id + 2
     port_map = {}
-    for port_type, _, _, _, port_name in ports:  # 修改这里，只提取 port_type 和 port_name
+    for port in ports:  # 修改这里，直接遍历端口字典
+        port_type = port['type']
+        port_name = port['name']
         if port_type == 'input':
             x = 50-5
             y = input_port_y

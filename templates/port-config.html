@@ -1,17 +1,25 @@
 <div id="port-config" class="panel d-none">
     <h4>Port Configuration</h4>
-    <ul id="port-list">
-        <!-- Ports will be dynamically populated here -->
-    </ul>
-    <div id="group-list">
-        <!-- Groups will be dynamically populated here -->
-    </div>
+    <table id="port-table">
+        <thead>
+            <tr>
+                <th>Group Name</th>
+                <th>Port Name</th>
+                <th>Port Type</th>
+            </tr>
+        </thead>
+        <tbody id="port-list">
+            <!-- Ports will be dynamically populated here -->
+        </tbody>
+    </table>
     <button class="btn btn-primary" onclick="groupPorts()">Group Selected Ports</button>
+    <button class="btn btn-danger" onclick="ungroupPorts()">Ungroup Selected Ports</button>
     <button class="btn btn-success" onclick="saveGroups()">Save and Continue</button>
 </div>
 
 <script>
     let portGroups = [];
+    let ungroupedPorts = [];
 
     function loadPorts() {
         const filename = new URLSearchParams(window.location.search).get('filename');
@@ -23,13 +31,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.ports) {
-                    const portList = document.getElementById('port-list');
-                    portList.innerHTML = '';
-                    data.ports.forEach(port => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<input type="checkbox" id="port-${port}" value="${port}"> <label for="port-${port}">${port}</label>`;
-                        portList.appendChild(li);
-                    });
+                    ungroupedPorts = data.ports;
+                    renderPorts();
                 } else {
                     alert('No ports found in the response.');
                 }
@@ -40,42 +43,70 @@
             });
     }
 
+    function renderPorts() {
+        const portList = document.getElementById('port-list');
+        portList.innerHTML = '';
+        
+        // Render ungrouped ports
+        ungroupedPorts.forEach(port => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" id="port-${port['name']}" value="${port['name']}"></td>
+                <td><label for="port-${port['name']}">${port['name']}</label></td>
+                <td>${port['type'] || 'N/A'}</td> <!-- 添加默认值处理 -->
+            `;
+            portList.appendChild(row);
+        });
+
+        // Render grouped ports
+        portGroups.forEach((group, index) => {
+            group.ports.forEach(port => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="text" value="${group.name}" onchange="editGroupName(${index}, this.value)"></td>
+                    <td><label for="port-${port['name']}">${port['name']}</label></td>
+                    <td>${port['type'] || 'N/A'}</td> <!-- 添加默认值处理 -->
+                `;
+                portList.appendChild(row);
+            });
+        });
+    }
+
     function groupPorts() {
         const selectedPorts = Array.from(document.querySelectorAll('#port-list input:checked')).map(input => input.value);
         if (selectedPorts.length === 0) {
             alert('Please select at least one port to group.');
             return;
         }
-        const groupName = prompt('Enter a name for the group:');
-        if (groupName) {
-            portGroups.push({ name: groupName, ports: selectedPorts });
-            renderGroups();
-        }
+        const groupName = `grp_id_${portGroups.length + 1}`;
+        const ports = selectedPorts.map(portName => ungroupedPorts.find(port => port.name === portName));
+        portGroups.push({ name: groupName, ports });
+        ungroupedPorts = ungroupedPorts.filter(port => !selectedPorts.includes(port.name));
+        renderPorts();
     }
 
-    function renderGroups() {
-        const groupList = document.getElementById('group-list');
-        groupList.innerHTML = '';
-        portGroups.forEach((group, index) => {
-            const div = document.createElement('div');
-            div.innerHTML = `
-                <input type="text" value="${group.name}" onchange="editGroupName(${index}, this.value)">
-                <ul>
-                    ${group.ports.map(port => `<li>${port}</li>`).join('')}
-                </ul>
-                <button onclick="deleteGroup(${index})">Delete</button>
-            `;
-            groupList.appendChild(div);
+    function ungroupPorts() {
+        const selectedPorts = Array.from(document.querySelectorAll('#port-list input:checked')).map(input => input.value);
+        if (selectedPorts.length === 0) {
+            alert('Please select at least one port to ungroup.');
+            return;
+        }
+        portGroups = portGroups.map(group => {
+            group.ports = group.ports.filter(port => !selectedPorts.includes(port.name));
+            return group;
+        }).filter(group => group.ports.length > 0);
+        selectedPorts.forEach(portName => {
+            const port = portGroups.flatMap(group => group.ports).find(p => p.name === portName);
+            if (port) {
+                ungroupedPorts.push(port);
+            }
         });
+        renderPorts();
     }
 
     function editGroupName(index, newName) {
         portGroups[index].name = newName;
-    }
-
-    function deleteGroup(index) {
-        portGroups.splice(index, 1);
-        renderGroups();
+        renderPorts();
     }
 
     function saveGroups() {

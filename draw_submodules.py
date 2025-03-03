@@ -39,13 +39,15 @@ def draw_submodules(root, submodules, module_width, next_id):
         # sub_input_port_y = submodule_y + 20
         # sub_output_port_y = submodule_y + 20
         # sub_inout_port_y = submodule_y + 100  # 将 inout 端口放置在子模块框的底部
-        # for sub_port, sub_port_type in [('input1', 'input'), ('output1', 'output'), ('inout1', 'inout')]:  # 示例端口
-        #     if sub_port_type == 'input':
+        # for port in [{'name': 'input1', 'type': 'input'}, {'name': 'output1', 'type': 'output'}, {'name': 'inout1', 'type': 'inout'}]:  # 示例端口
+        #     port_type = port['type']
+        #     port_name = port['name']
+        #     if port_type == 'input':
         #         x = submodule_x
         #         y = sub_input_port_y
         #         sub_input_port_y += 20
         #         port_name_x = x + 20  # 将端口名称移动到端口的右侧
-        #     elif sub_port_type == 'output':
+        #     elif port_type == 'output':
         #         x = submodule_x + 100
         #         y = sub_output_port_y
         #         sub_output_port_y += 20
@@ -58,7 +60,7 @@ def draw_submodules(root, submodules, module_width, next_id):
 
         #     sub_port_cell = ET.SubElement(root, 'mxCell', {
         #         'id': str(next_id),
-        #         'value': sub_port,
+        #         'value': port_name,
         #         'style': 'shape=rectangle;whiteSpace=wrap;html=1;',
         #         'vertex': '1',
         #         'parent': str(submodule_id),
@@ -75,7 +77,7 @@ def draw_submodules(root, submodules, module_width, next_id):
         #         'height': '10',
         #         'as': 'geometry'
         #     })
-        #     submodule_port_map[submodule_name][sub_port] = next_id
+        #     submodule_port_map[submodule_name][port_name] = next_id
         #     next_id += 1
 
         submodule_y += 120  # 将下一个子模块向下移动 120 像素

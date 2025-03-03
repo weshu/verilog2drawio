@@ -22,7 +22,7 @@ def generate_drawio(module_name, ports, submodules, connections):
     """
     生成 Drawio XML 文件
     :param module_name: 模块名
-    :param ports: 端口列表
+    :param ports: 端口字典列表
     :param submodules: 子模块列表
     :param connections: 连接信息列表
     """
@@ -54,12 +54,12 @@ def generate_drawio(module_name, ports, submodules, connections):
 
     # 计算模块框的高度和宽度
     port_height = 30
-    input_ports = [port for port in ports if port[0] == 'input']
-    output_ports = [port for port in ports if port[0] == 'output']
+    input_ports = [port for port in ports if port['type'] == 'input']
+    output_ports = [port for port in ports if port['type'] == 'output']
     input_height = len(input_ports) * port_height
     output_height = len(output_ports) * port_height
     module_height = 50 + max(input_height, output_height)
-    max_port_name_length = max(len(port_name) for _, _, _, _, port_name in ports) if ports else 0
+    max_port_name_length = max(len(port['name']) for port in ports) if ports else 0
     module_width = max_port_name_length * 10 * 2 + 40
 
     # 绘制主模块和主模块的端口
@@ -80,7 +80,6 @@ def generate_drawio(module_name, ports, submodules, connections):
     except Exception as e:
         print(f"生成 Drawio 文件 {module_name}.drawio 时出错: {e}")
 
-
 # 单元测试
 import unittest
 import os
@@ -88,7 +87,10 @@ import os
 class TestGenerateDrawio(unittest.TestCase):
     def setUp(self):
         self.test_module_name = './test/test_module'
-        self.test_ports = [('input', 'in1'), ('output', 'out1')]
+        self.test_ports = [
+            {'type': 'input', 'name': 'in1'},
+            {'type': 'output', 'name': 'out1'}
+        ]
         self.test_submodules = [('sub_module', 'sub_inst')]
         self.test_connections = [('sub_inst', 'in_port', 'in1'), ('sub_inst', 'out_port', 'out1')]
 
@@ -99,7 +101,6 @@ class TestGenerateDrawio(unittest.TestCase):
         generate_drawio(self.test_module_name, self.test_ports, self.test_submodules, self.test_connections)
         drawio_file = f'{self.test_module_name}.drawio'
         self.assertEqual(os.path.exists(drawio_file), True)
-
 
 if __name__ == '__main__':
     unittest.main()
