@@ -11,6 +11,24 @@
         .d-flex {
             height: calc(98% - 112px); /* Subtract header and footer height */
         }
+        /* 修改拖放区域和上传按钮的样式 */
+        .drop-zone {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            flex: 1;
+            margin-right: 20px; /* 添加右侧间距 */
+            width: 45%; /* 设置宽度为45% */
+        }
+        #upload-form {
+            display: flex;
+            flex-direction: row; /* 修改为水平排列 */
+            align-items: center;
+            justify-content: center; /* 水平居中 */
+        }
+        #upload-form button {
+            width: 45%; /* 设置按钮宽度为45% */
+        }
     </style>
 </head>
 <body>
@@ -37,11 +55,11 @@
             <div id="upload" class="panel">
                 <h4>Upload Verilog File</h4>
                 <form id="upload-form" method="POST" enctype="multipart/form-data">
-                    <div class="drop-zone" style="border: 2px dashed #ccc; padding: 20px; text-align: center;">
+                    <div class="drop-zone">
                         Drop Verilog file here or click to upload
-                        <input type="file" name="file" id="file-input" hidden />
+                        <input type="file" name="file" id="file-input" hidden onchange="handleUpload()" />
                     </div>
-                    <button type="button" class="btn btn-primary mt-3" onclick="handleUpload()">Upload</button>
+                    <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput()">Upload</button>
                 </form>
                 {% if filename %}
                 <p>Uploaded File: {{ filename }}</p> <!-- 显示已上传文件信息 -->
@@ -50,7 +68,7 @@
                 {% endif %}
                 <!-- 解析并跳转按钮 -->
                 <button class="btn btn-success mt-3" onclick="parseAndContinue()">Parse and Continue</button>
-            </div> 
+            </div>
             <!-- Port Configuration Panel -->
             <div id="port-config" class="panel d-none">
                 <h4>Port Configuration</h4>
@@ -111,6 +129,10 @@
                 console.error('Error:', error);
                 alert('Failed to upload file');
             });
+        }
+
+        function triggerFileInput() {
+            document.getElementById('file-input').click();
         }
 
         // Drag and drop functionality
