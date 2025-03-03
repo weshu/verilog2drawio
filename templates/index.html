@@ -1,150 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verilog to Draw.io</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         html, body {
-            height: 98%;
+            height: 100%;
             margin: 0;
+            overflow: hidden;
         }
-        .d-flex {
-            height: calc(98% - 112px); /* Subtract header and footer height */
-        }
-        /* 修改拖放区域和上传按钮的样式 */
-        .drop-zone {
-            border: 2px dashed #ccc;
-            padding: 20px;
-            text-align: center;
-            flex: 1;
-            margin-right: 20px; /* 添加右侧间距 */
-            width: 45%; /* 设置宽度为45% */
-        }
-        #upload-form {
+
+        .app-container {
             display: flex;
-            flex-direction: row; /* 修改为水平排列 */
-            align-items: center;
-            justify-content: center; /* 水平居中 */
+            flex-direction: column;
+            height: 100vh;
         }
-        #upload-form button {
-            width: 45%; /* 设置按钮宽度为45% */
+
+        header {
+            background: linear-gradient(135deg, #0074D9 0%, #0056a3 100%);
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        nav {
+            width: 250px;
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        nav .btn {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background-color: transparent;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+
+        nav .btn:hover {
+            background-color: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        nav .btn i {
+            margin-right: 8px;
+            width: 20px;
+            text-align: center;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+        }
+
+        footer {
+            background: linear-gradient(135deg, #0074D9 0%, #0056a3 100%);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            nav {
+                width: 200px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header style="background-color: #0074D9; color: white;" class="text-white p-3">
-        <h1>Verilog to Draw.io Converter</h1>
-    </header>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <h1 class="h3 text-white mb-0">Verilog to Draw.io Converter</h1>
+        </header>
 
-    <!-- Main Content -->
-    <div class="d-flex">
-        <!-- Navbar -->
-        <nav style="background-color: rgb(198, 206, 255);" class="flex-column align-items-start p-3" style="width: 20%;">
-            <div class="navbar-nav w-100">
-                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('upload')">Upload Verilog</button>
-                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('port-config')">Port Configuration</button>
-                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('submodule-config')">Submodule Configuration</button>
-                <button class="nav-item nav-link btn btn-outline-light w-100 mb-2" onclick="showPanel('generate-drawio')">Generate DrawIO</button>
-            </div>
-        </nav>
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <!-- Navbar -->
+            <nav>
+                <div class="d-flex flex-column">
+                    <button class="btn" onclick="showPanel('upload')">
+                        <i class="fas fa-upload"></i> Upload Verilog
+                    </button>
+                    <button class="btn" onclick="showPanel('port-config')">
+                        <i class="fas fa-plug"></i> Port Configuration
+                    </button>
+                    <button class="btn" onclick="showPanel('submodule-config')">
+                        <i class="fas fa-project-diagram"></i> Submodule Configuration
+                    </button>
+                    <button class="btn" onclick="showPanel('generate-drawio')">
+                        <i class="fas fa-file-export"></i> Generate DrawIO
+                    </button>
+                </div>
+            </nav>
 
-        <!-- Main Panel -->
-        <main class="p-3" style="width: 80%; height: 100%;">
-            <!-- Include Upload Panel -->
-            {% include 'upload.html' %}
-            <!-- Include Port Configuration Panel -->
-            {% include 'port-config.html' %}
-            <!-- Include Submodule Configuration Panel -->
-            {% include 'submodule-config.html' %}
-            <!-- Include Generate DrawIO Panel -->
-            {% include 'generate-drawio.html' %}
-        </main>
+            <!-- Main Panel -->
+            <main>
+                <!-- Include Upload Panel -->
+                {% include 'upload.html' %}
+                <!-- Include Port Configuration Panel -->
+                {% include 'port-config.html' %}
+                <!-- Include Submodule Configuration Panel -->
+                {% include 'submodule-config.html' %}
+                <!-- Include Generate DrawIO Panel -->
+                {% include 'generate-drawio.html' %}
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p class="text-white mb-0">© 2025 Clounix.com</p>
+        </footer>
     </div>
 
-    <!-- Footer -->
-    <footer style="background-color: #0074D9; color: white;" class="text-white p-3">
-        <p class="text-center">© 2025 Clounix.com </p>
-    </footer>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let uploadedFile = null;
 
-<script>
-    let uploadedFile = null; // 添加全局变量来存储上传的文件
-
-    function showPanel(panelId) {
-        document.querySelectorAll('.panel').forEach(panel => panel.classList.add('d-none'));
-        document.getElementById(panelId).classList.remove('d-none');
-        if (panelId === 'port-config') {
-            loadPorts();
-        }
-    }
-
-    function handleUpload() {
-        const fileInput = document.getElementById('file-input');
-        // 添加调试信息
-        console.log('File input files in handleUpload:', fileInput.files);
-        console.log('File input file name:', fileInput.files[0].name);
-        if (fileInput.files.length === 0) {
-            alert('Please select a file to upload.');
-            return;
-        }
-        uploadedFile = fileInput.files[0]; // 将上传的文件存储在全局变量中
-        console.log('update uploadedFile@handleUpload:', uploadedFile.name);
-        const formData = new FormData();
-        formData.append('file', uploadedFile);
-        fetch('/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = '/?filename=' + data.filename; // 修改这里，将文件名作为URL参数传递
-            } else {
-                alert(data.error);
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(panel => {
+                panel.classList.add('d-none');
+                panel.classList.remove('fade-in');
+            });
+            const targetPanel = document.getElementById(panelId);
+            targetPanel.classList.remove('d-none');
+            setTimeout(() => targetPanel.classList.add('fade-in'), 10);
+            
+            if (panelId === 'port-config') {
+                loadPorts();
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to upload file');
+        }
+
+        function handleUpload() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to upload.');
+                return;
+            }
+            uploadedFile = fileInput.files[0];
+            
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/?filename=' + data.filename;
+                } else {
+                    alert(data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to upload file');
+            });
+        }
+
+        function triggerFileInput() {
+            document.getElementById('file-input').click();
+            document.getElementById('file-input').addEventListener('change', handleUpload, { once: true });
+        }
+
+        // Drag and drop functionality
+        const dropZone = document.querySelector('.drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '#f0f0f0';
         });
-    }
 
-    function triggerFileInput() {
-        console.log('Triggering file input'); // 添加调试信息
-        document.getElementById('file-input').click();
-        document.getElementById('file-input').addEventListener('change', handleUpload, { once: true });
-    }
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.backgroundColor = '';
+        });
 
-    // Drag and drop functionality
-    const dropZone = document.querySelector('.drop-zone');
-    const fileInput = document.getElementById('file-input');
-    dropZone.addEventListener('dragover', e => {
-        e.preventDefault();
-        dropZone.style.backgroundColor = '#f0f0f0';
-    });
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.style.backgroundColor = '';
-    });
-    dropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropZone.style.backgroundColor = '';
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            const dataTransfer = new DataTransfer(); // 创建 DataTransfer 对象
-            dataTransfer.items.add(file); // 添加文件到 DataTransfer
-            fileInput.files = dataTransfer.files; // 设置 fileInput.files
-            handleUpload();
-        } else {
-            alert('No file detected in the drop event.');
-        }
-    });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '';
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                handleUpload();
+            } else {
+                alert('No file detected in the drop event.');
+            }
+        });
 
-    // 新增：页面加载时重新设置 uploadedFile
-    window.onload = function() {
-        uploadedfilename = new URLSearchParams(window.location.search).get('filename');
-        if (uploadedfilename) {
-            console.log('Uploaded Filename from URL:', uploadedfilename);
-        }
-    };
-</script>
+        // Initialize on page load
+        window.onload = function() {
+            const uploadedfilename = new URLSearchParams(window.location.search).get('filename');
+            if (uploadedfilename) {
+                console.log('Uploaded Filename from URL:', uploadedfilename);
+            }
+        };
+    </script>
 </body>
+</html>

@@ -53,3 +53,9 @@ in port-config.html, improve the followed:
 1. make the table to have a modern look
 2. use more decent way for multi-selection instead of checkbox
 in index.html, handle that the right panel is very tall, may be a scroll bar is needed, make it morden look
+
+in port-config.html, I want to move "group selected" and "ungroup selected" to the right side, when I scroll down the table, these 2 button keep the relative window position
+
+perfect! I also want the table support "shift" and "ctrl" key for better selection.
+
+In port-config.html, after port group created, if I change the group name in one port, the ports in same port group should all be updated with the new group name
