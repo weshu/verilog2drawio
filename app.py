@@ -1,11 +1,32 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify, session
 import os
 from werkzeug.utils import secure_filename
 from verilog2drawio import parse_verilog, generate_drawio
+from functools import lru_cache
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['ALLOWED_EXTENSIONS'] = {'v', 'vh'}
+app.secret_key = 'your-secret-key-here'  # Required for session
+
+@lru_cache(maxsize=32)
+def get_parsed_verilog(filepath):
+    """Cache the parse_verilog results for each file"""
+    return parse_verilog(filepath)
+
+def get_module_info(filename):
+    """Get module information from cache or parse file"""
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    try:
+        modules = get_parsed_verilog(filepath)
+        
+        if not modules:
+            return None, 'No modules found in the file'
+        
+        return modules[0], None  # Return first module and no error
+    except Exception as e:
+        return None, str(e)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -26,7 +47,9 @@ def upload_file():
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         try:
-            file.save(filepath)  # 确保文件保存成功
+            file.save(filepath)
+            # Clear the cache for this file if it exists
+            get_parsed_verilog.cache_clear()
             return jsonify({'success': True, 'filename': filename}), 200
         except Exception as e:
             return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
@@ -45,18 +68,36 @@ def parse(filename):
 @app.route('/get_ports')
 def get_ports():
     filename = request.args.get('filename')
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    print(f"Parsing Verilog file: {filepath}")
-    try:
-        modules = parse_verilog(filepath)  # 获取模块列表
-        if not modules:  # 检查模块列表是否为空
-            return jsonify({'error': 'No modules found in the file'}), 404
-        first_module = modules[0]  # 获取第一个模块
-        ports = first_module[1]  # 提取端口信息
-        # print(f"               ports: {ports}")
-        return jsonify({'ports': ports})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    if not filename:
+        return jsonify({'error': 'No filename provided'}), 400
+
+    module, error = get_module_info(filename)
+    if error:
+        return jsonify({'error': error}), 404 if 'No modules found' in error else 500
+
+    ports = module[1]  # Extract port information
+    return jsonify({'ports': ports})
+
+@app.route('/get_submodules')
+def get_submodules():
+    filename = request.args.get('filename')
+    
+    if not filename:
+        return jsonify({'error': 'No filename provided'}), 400
+
+    module, error = get_module_info(filename)
+    
+    if error:
+        return jsonify({'error': error}), 404 if 'No modules found' in error else 500
+
+    submodules = module[2] if len(module) > 2 else []  # Extract submodule information
+    
+    formatted_submodules = [
+        {'name': submodule_type, 'instance': submodule_name}
+        for submodule_type, submodule_name in submodules
+    ]
+    
+    return jsonify({'submodules': formatted_submodules})
 
 @app.route('/group_ports', methods=['POST'])
 def group_ports():

@@ -59,3 +59,7 @@ in port-config.html, I want to move "group selected" and "ungroup selected" to t
 perfect! I also want the table support "shift" and "ctrl" key for better selection.
 
 In port-config.html, after port group created, if I change the group name in one port, the ports in same port group should all be updated with the new group name
+
+In submodule-config.html, similar to the port-config, I would like a table to show all the submodule. all the submodule by defauled is selected. this table also support "shift" and "ctrl" key for advanced selection, remember the selected submodule in global variables for future processing in gererate drawio page.
+
+In app.py, it should support route: `/get_submodules?filename=${filename}`, I would like to reuse the parse_verilog(filepath) in get_ports, it should have the submodule information

@@ -1,7 +1,194 @@
 <div id="submodule-config" class="panel d-none">
-    <h4>Submodule Configuration</h4>
-    <ul id="submodule-list">
-        <!-- Submodules will be dynamically populated here -->
-    </ul>
-    <button class="btn btn-primary" onclick="selectSubmodules()">Select Submodules</button>
+    <h4 class="mb-4">Submodule Configuration</h4>
+    <div class="position-relative">
+        <!-- Main table container -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <table id="submodule-table" class="table table-hover">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0">Submodule Name</th>
+                            <th class="border-0">Instance Name</th>
+                            <th class="border-0 text-center" style="width: 50px;">Select</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submodule-list">
+                        <!-- Submodules will be dynamically populated here -->
+                    </tbody>
+                </table>
+                <!-- Save button centered under the table -->
+                <div class="text-center mt-4">
+                    <button class="btn btn-success btn-lg px-5" onclick="saveSubmoduleSelection()">
+                        <i class="fas fa-save"></i> Save and Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    let selectedSubmodules = []; // Global variable to store selected submodules
+    let lastSelectedSubmoduleRow = null; // Track last selected row for shift selection
+    let allSubmodules = []; // Store all submodules
+
+    function loadSubmodules() {
+        const filename = new URLSearchParams(window.location.search).get('filename');
+        if (!filename) {
+            alert('No filename found in URL.');
+            return;
+        }
+        
+        fetch(`/get_submodules?filename=${filename}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.submodules) {
+                    allSubmodules = data.submodules;
+                    selectedSubmodules = [...allSubmodules]; // Initially select all submodules
+                    renderSubmodules();
+                } else {
+                    alert('No submodules found in the response.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to fetch submodules.');
+            });
+    }
+
+    function renderSubmodules() {
+        const submoduleList = document.getElementById('submodule-list');
+        if (!submoduleList) {
+            return;
+        }
+        
+        submoduleList.innerHTML = '';
+        
+        allSubmodules.forEach(submodule => {
+            const row = document.createElement('tr');
+            row.classList.add('submodule-row');
+            row.dataset.submoduleName = submodule.name;
+            row.dataset.instanceName = submodule.instance || submodule.name;
+            
+            const isSelected = selectedSubmodules.some(s => 
+                s.name === submodule.name && s.instance === submodule.instance
+            );
+
+            row.innerHTML = `
+                <td>${submodule.name}</td>
+                <td>${submodule.instance || submodule.name}</td>
+                <td class="text-center">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input submodule-checkbox" 
+                               id="check_${submodule.name}_${submodule.instance || submodule.name}"
+                               ${isSelected ? 'checked' : ''}>
+                        <label class="custom-control-label" 
+                               for="check_${submodule.name}_${submodule.instance || submodule.name}"></label>
+                    </div>
+                </td>
+            `;
+            submoduleList.appendChild(row);
+
+            // Add event listener for checkbox
+            const checkbox = row.querySelector('.submodule-checkbox');
+            checkbox.addEventListener('change', () => {
+                updateSelectedSubmodules();
+            });
+        });
+
+        // Add click handler for rows with advanced selection support
+        document.querySelectorAll('.submodule-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                // Ignore clicks on checkbox itself
+                if (e.target.classList.contains('submodule-checkbox')) {
+                    return;
+                }
+
+                const checkbox = row.querySelector('.submodule-checkbox');
+                
+                // Handle Shift + Click
+                if (e.shiftKey && lastSelectedSubmoduleRow) {
+                    const rows = Array.from(document.querySelectorAll('.submodule-row'));
+                    const currentIndex = rows.indexOf(row);
+                    const lastIndex = rows.indexOf(lastSelectedSubmoduleRow);
+                    const start = Math.min(currentIndex, lastIndex);
+                    const end = Math.max(currentIndex, lastIndex);
+
+                    // Clear any existing selections if not using Ctrl/Cmd
+                    if (!e.ctrlKey && !e.metaKey) {
+                        rows.forEach(r => r.querySelector('.submodule-checkbox').checked = false);
+                    }
+
+                    // Select all rows in range
+                    for (let i = start; i <= end; i++) {
+                        rows[i].querySelector('.submodule-checkbox').checked = true;
+                    }
+                }
+                // Handle Ctrl/Cmd + Click
+                else if (e.ctrlKey || e.metaKey) {
+                    checkbox.checked = !checkbox.checked;
+                    lastSelectedSubmoduleRow = checkbox.checked ? row : null;
+                }
+                // Normal click
+                else {
+                    document.querySelectorAll('.submodule-checkbox').forEach(cb => cb.checked = false);
+                    checkbox.checked = true;
+                    lastSelectedSubmoduleRow = row;
+                }
+
+                updateSelectedSubmodules();
+                // Prevent text selection during shift-click
+                window.getSelection().removeAllRanges();
+            });
+        });
+
+        // Add keyboard support for selection
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault();
+                document.querySelectorAll('.submodule-checkbox').forEach(cb => cb.checked = true);
+                lastSelectedSubmoduleRow = document.querySelector('.submodule-row');
+                updateSelectedSubmodules();
+            }
+        });
+
+        updateSelectedSubmodules(); // Initialize selected submodules
+    }
+
+    function updateSelectedSubmodules() {
+        selectedSubmodules = Array.from(document.querySelectorAll('.submodule-checkbox:checked'))
+            .map(checkbox => {
+                const row = checkbox.closest('.submodule-row');
+                return {
+                    name: row.dataset.submoduleName,
+                    instance: row.dataset.instanceName
+                };
+            });
+    }
+
+    function saveSubmoduleSelection() {
+        fetch('/save_submodules', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ submodules: selectedSubmodules })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showPanel('generate-drawio');
+            } else {
+                alert('Failed to save submodule selection.');
+            }
+        });
+    }
+
+    // Load submodules when the panel is shown
+    document.addEventListener('DOMContentLoaded', () => {
+        if (document.getElementById('submodule-config').classList.contains('d-none')) {
+            return;
+        }
+        loadSubmodules();
+    });
+</script>
