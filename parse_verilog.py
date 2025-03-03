@@ -18,12 +18,12 @@ def parse_verilog(file_path):
     """
     解析 Verilog 文件，提取模块信息
     :param file_path: Verilog 文件路径
-    :return: 模块信息字典，键为模块名，值为 (ports, submodules, connections) 元组
+    :return: 模块信息列表，每个元素为 (module_name, ports, submodules, connections) 元组
     """
     with open(file_path, 'r') as file:
         content = file.read()
 
-    modules = {}
+    modules = []
     for match in module_pattern.finditer(content):
         module_name = match.group(1)
         params_str = match.group(2)
@@ -37,7 +37,6 @@ def parse_verilog(file_path):
                 param = param.strip()
                 if '=' in param:
                     param_name, param_default = param.split('=')
-                    # 去除字符串两端的空白字符，然后按空白字符（空格、制表符等）分割字符串
                     param_parts = param_name.strip().split()
                     if len(param_parts) > 1 and param_parts[0] == "parameter":
                         param_name = param_parts[1]
@@ -75,7 +74,7 @@ def parse_verilog(file_path):
         # 提取子模块信息和连接信息
         submodules, connections = extract_submodules_and_connections(body, params)
 
-        modules[module_name] = (ports, submodules, connections)
+        modules.append((module_name, ports, submodules, connections))
 
     return modules
 

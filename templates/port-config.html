@@ -1,7 +1,13 @@
 <div id="port-config" class="panel d-none">
     <h4>Port Configuration</h4>
-    <table id="port-table">
-        <thead>
+    <div class="form-group">
+        <label for="port-select">Select Ports:</label>
+        <select id="port-select" class="form-control selectpicker" multiple data-live-search="true">
+            <!-- Ports will be dynamically populated here -->
+        </select>
+    </div>
+    <table id="port-table" class="table table-striped table-hover">
+        <thead class="thead-dark">
             <tr>
                 <th>Group Name</th>
                 <th>Port Name</th>
@@ -45,17 +51,24 @@
 
     function renderPorts() {
         const portList = document.getElementById('port-list');
+        const portSelect = document.getElementById('port-select');
         portList.innerHTML = '';
+        portSelect.innerHTML = '';
         
         // Render ungrouped ports
         ungroupedPorts.forEach(port => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><input type="checkbox" id="port-${port['name']}" value="${port['name']}"></td>
-                <td><label for="port-${port['name']}">${port['name']}</label></td>
-                <td>${port['type'] || 'N/A'}</td> <!-- 添加默认值处理 -->
+                <td><input type="text" value=""></td>
+                <td>${port['name']}</td>
+                <td>${port['type'] || 'N/A'}</td>
             `;
             portList.appendChild(row);
+
+            const option = document.createElement('option');
+            option.value = port['name'];
+            option.text = port['name'];
+            portSelect.appendChild(option);
         });
 
         // Render grouped ports
@@ -64,16 +77,19 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><input type="text" value="${group.name}" onchange="editGroupName(${index}, this.value)"></td>
-                    <td><label for="port-${port['name']}">${port['name']}</label></td>
-                    <td>${port['type'] || 'N/A'}</td> <!-- 添加默认值处理 -->
+                    <td>${port['name']}</td>
+                    <td>${port['type'] || 'N/A'}</td>
                 `;
                 portList.appendChild(row);
             });
         });
+
+        // Initialize the selectpicker
+        $('.selectpicker').selectpicker('refresh');
     }
 
     function groupPorts() {
-        const selectedPorts = Array.from(document.querySelectorAll('#port-list input:checked')).map(input => input.value);
+        const selectedPorts = Array.from(document.querySelectorAll('#port-select option:checked')).map(option => option.value);
         if (selectedPorts.length === 0) {
             alert('Please select at least one port to group.');
             return;
@@ -86,7 +102,7 @@
     }
 
     function ungroupPorts() {
-        const selectedPorts = Array.from(document.querySelectorAll('#port-list input:checked')).map(input => input.value);
+        const selectedPorts = Array.from(document.querySelectorAll('#port-select option:checked')).map(option => option.value);
         if (selectedPorts.length === 0) {
             alert('Please select at least one port to ungroup.');
             return;

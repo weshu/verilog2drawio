@@ -48,8 +48,12 @@ def get_ports():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     print(f"Parsing Verilog file: {filepath}")
     try:
-        ports = parse_verilog(filepath)[0]  # 假设 parse_verilog 返回一个包含端口信息的字典
-        print(f"             ports: {ports}")
+        modules = parse_verilog(filepath)  # 获取模块列表
+        if not modules:  # 检查模块列表是否为空
+            return jsonify({'error': 'No modules found in the file'}), 404
+        first_module = modules[0]  # 获取第一个模块
+        ports = first_module[1]  # 提取端口信息
+        # print(f"               ports: {ports}")
         return jsonify({'ports': ports})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

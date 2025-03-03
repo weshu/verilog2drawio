@@ -48,3 +48,8 @@ here is the dict code:
                 'width': f"{port_width_start}:{port_width_end}" if port_width_start else '',
                 'name': port_name
             })
+
+in port-config.html, improve the followed:
+1. make the table to have a modern look
+2. use more decent way for multi-selection instead of checkbox
+in index.html, handle that the right panel is very tall, may be a scroll bar is needed, make it morden look
