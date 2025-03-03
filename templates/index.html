@@ -59,7 +59,7 @@
                         Drop Verilog file here or click to upload
                         <input type="file" name="file" id="file-input" hidden onchange="handleUpload()" />
                     </div>
-                    <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput()">Upload</button>
+                    <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput(); handleUpload()">Upload</button>
                 </form>
                 {% if filename %}
                 <p>Uploaded File: {{ filename }}</p> <!-- 显示已上传文件信息 -->
@@ -99,75 +99,93 @@
         <p class="text-center">© 2025 Clounix.com </p>
     </footer>
 
-    <script>
-        function showPanel(panelId) {
-            document.querySelectorAll('.panel').forEach(panel => panel.classList.add('d-none'));
-            document.getElementById(panelId).classList.remove('d-none');
-        }
+<script>
+    let uploadedFile = null; // 添加全局变量来存储上传的文件
 
-        function handleUpload() {
-            const fileInput = document.getElementById('file-input');
-            if (fileInput.files.length === 0) {
-                alert('Please select a file to upload.');
-                return;
-            }
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = '/?filename=' + data.filename; // 修改这里，将文件名作为URL参数传递
-                } else {
-                    alert(data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to upload file');
-            });
-        }
+    function showPanel(panelId) {
+        document.querySelectorAll('.panel').forEach(panel => panel.classList.add('d-none'));
+        document.getElementById(panelId).classList.remove('d-none');
+    }
 
-        function triggerFileInput() {
-            document.getElementById('file-input').click();
-        }
-
-        // Drag and drop functionality
-        const dropZone = document.querySelector('.drop-zone');
+    function handleUpload() {
         const fileInput = document.getElementById('file-input');
-        dropZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropZone.style.backgroundColor = '#f0f0f0';
-        });
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.style.backgroundColor = '';
-        });
-        dropZone.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZone.style.backgroundColor = '';
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                const dataTransfer = new DataTransfer(); // 创建 DataTransfer 对象
-                dataTransfer.items.add(file); // 添加文件到 DataTransfer
-                fileInput.files = dataTransfer.files; // 设置 fileInput.files
-                handleUpload();
-            } else {
-                alert('No file detected in the drop event.');
-            }
-        });
-
-        // 解析并跳转逻辑
-        function parseAndContinue() {
-            const file = fileInput.files[0];
-            if (!file) {
-                alert('Please upload a Verilog file first.');
-                return;
-            }
-            // 假设上传成功后会跳转到解析页面
-            window.location.href = '/?filename=' + file.name; // 修改这里，将文件名作为URL参数传递
+        // 添加调试信息
+        console.log('File input files in handleUpload:', fileInput.files);
+        console.log('File input file name:', fileInput.files[0].name);
+        if (fileInput.files.length === 0) {
+            alert('Please select a file to upload.');
+            return;
         }
-    </script>
+        uploadedFile = fileInput.files[0]; // 将上传的文件存储在全局变量中
+        console.log('update uploadedFile@handleUpload:', uploadedFile.name);
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/?filename=' + data.filename; // 修改这里，将文件名作为URL参数传递
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to upload file');
+        });
+    }
+
+    function triggerFileInput() {
+        console.log('Triggering file input'); // 添加调试信息
+        document.getElementById('file-input').click();
+        document.getElementById('file-input').addEventListener('change', handleUpload, { once: true });
+    }
+
+    // Drag and drop functionality
+    const dropZone = document.querySelector('.drop-zone');
+    const fileInput = document.getElementById('file-input');
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.style.backgroundColor = '#f0f0f0';
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.backgroundColor = '';
+    });
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.style.backgroundColor = '';
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const dataTransfer = new DataTransfer(); // 创建 DataTransfer 对象
+            dataTransfer.items.add(file); // 添加文件到 DataTransfer
+            fileInput.files = dataTransfer.files; // 设置 fileInput.files
+            handleUpload();
+        } else {
+            alert('No file detected in the drop event.');
+        }
+    });
+
+    // 解析并跳转逻辑
+    function parseAndContinue() {
+        // 使用全局变量中的文件信息
+        console.log('update uploadedFile@parseAndContinue:', uploadedfilename);
+        if (!uploadedfilename) {
+            alert('Please upload a Verilog file first.');
+            return;
+        }
+        // 假设上传成功后会跳转到解析页面
+        showPanel('port-config');
+    }
+
+    // 新增：页面加载时重新设置 uploadedFile
+    window.onload = function() {
+        uploadedfilename = new URLSearchParams(window.location.search).get('filename');
+        if (uploadedfilename) {
+            console.log('Uploaded Filename from URL:', uploadedfilename);
+        }
+    };
+</script>
 </body>
