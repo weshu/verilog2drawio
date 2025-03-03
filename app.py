@@ -42,6 +42,18 @@ def parse(filename):
     except Exception as e:
         return f"Error reading file: {str(e)}", 500
 
+@app.route('/get_ports')
+def get_ports():
+    filename = request.args.get('filename')
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    print(f"Parsing Verilog file: {filepath}")
+    try:
+        ports = parse_verilog(filepath)[0]  # 假设 parse_verilog 返回一个包含端口信息的字典
+        print(f"             ports: {ports}")
+        return jsonify({'ports': ports})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/group_ports', methods=['POST'])
 def group_ports():
     # Handle port grouping logic
@@ -66,6 +78,12 @@ def generate(filename):
     with open(output_path, 'w') as f:
         f.write(drawio_xml)
     return send_file(output_path, as_attachment=True)
+
+@app.route('/save_groups', methods=['POST'])
+def save_groups():
+    data = request.json
+    # 这里可以保存分组信息到数据库或 session
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

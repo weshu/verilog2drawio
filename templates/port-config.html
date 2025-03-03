@@ -1,0 +1,98 @@
+<div id="port-config" class="panel d-none">
+    <h4>Port Configuration</h4>
+    <ul id="port-list">
+        <!-- Ports will be dynamically populated here -->
+    </ul>
+    <div id="group-list">
+        <!-- Groups will be dynamically populated here -->
+    </div>
+    <button class="btn btn-primary" onclick="groupPorts()">Group Selected Ports</button>
+    <button class="btn btn-success" onclick="saveGroups()">Save and Continue</button>
+</div>
+
+<script>
+    let portGroups = [];
+
+    function loadPorts() {
+        const filename = new URLSearchParams(window.location.search).get('filename');
+        if (!filename) {
+            alert('No filename found in URL.');
+            return;
+        }
+        fetch(`/get_ports?filename=${filename}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.ports) {
+                    const portList = document.getElementById('port-list');
+                    portList.innerHTML = '';
+                    data.ports.forEach(port => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<input type="checkbox" id="port-${port}" value="${port}"> <label for="port-${port}">${port}</label>`;
+                        portList.appendChild(li);
+                    });
+                } else {
+                    alert('No ports found in the response.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to fetch ports.');
+            });
+    }
+
+    function groupPorts() {
+        const selectedPorts = Array.from(document.querySelectorAll('#port-list input:checked')).map(input => input.value);
+        if (selectedPorts.length === 0) {
+            alert('Please select at least one port to group.');
+            return;
+        }
+        const groupName = prompt('Enter a name for the group:');
+        if (groupName) {
+            portGroups.push({ name: groupName, ports: selectedPorts });
+            renderGroups();
+        }
+    }
+
+    function renderGroups() {
+        const groupList = document.getElementById('group-list');
+        groupList.innerHTML = '';
+        portGroups.forEach((group, index) => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <input type="text" value="${group.name}" onchange="editGroupName(${index}, this.value)">
+                <ul>
+                    ${group.ports.map(port => `<li>${port}</li>`).join('')}
+                </ul>
+                <button onclick="deleteGroup(${index})">Delete</button>
+            `;
+            groupList.appendChild(div);
+        });
+    }
+
+    function editGroupName(index, newName) {
+        portGroups[index].name = newName;
+    }
+
+    function deleteGroup(index) {
+        portGroups.splice(index, 1);
+        renderGroups();
+    }
+
+    function saveGroups() {
+        fetch('/save_groups', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ groups: portGroups })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showPanel('submodule-config');
+            } else {
+                alert('Failed to save groups.');
+            }
+        });
+    }
+</script>

@@ -51,46 +51,14 @@
 
         <!-- Main Panel -->
         <main class="p-3" style="width: 80%; height: 100%;">
-            <!-- Upload Panel -->
-            <div id="upload" class="panel">
-                <h4>Upload Verilog File</h4>
-                <form id="upload-form" method="POST" enctype="multipart/form-data">
-                    <div class="drop-zone">
-                        Drop Verilog file here or click to upload
-                        <input type="file" name="file" id="file-input" hidden onchange="handleUpload()" />
-                    </div>
-                    <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput(); handleUpload()">Upload</button>
-                </form>
-                {% if filename %}
-                <p>Uploaded File: {{ filename }}</p> <!-- 显示已上传文件信息 -->
-                {% else %}
-                <p>No file uploaded yet.</p> <!-- 提示用户未上传文件 -->
-                {% endif %}
-                <!-- 解析并跳转按钮 -->
-                <button class="btn btn-success mt-3" onclick="parseAndContinue()">Parse and Continue</button>
-            </div>
-            <!-- Port Configuration Panel -->
-            <div id="port-config" class="panel d-none">
-                <h4>Port Configuration</h4>
-                <ul id="port-list">
-                    <!-- Ports will be dynamically populated here -->
-                </ul>
-                <button class="btn btn-primary" onclick="groupPorts()">Group Selected Ports</button>
-            </div>
-            <!-- Submodule Configuration Panel -->
-            <div id="submodule-config" class="panel d-none">
-                <h4>Submodule Configuration</h4>
-                <ul id="submodule-list">
-                    <!-- Submodules will be dynamically populated here -->
-                </ul>
-                <button class="btn btn-primary" onclick="selectSubmodules()">Select Submodules</button>
-            </div>
-            <!-- Generate DrawIO Panel -->
-            <div id="generate-drawio" class="panel d-none">
-                <h4>Generated DrawIO XML</h4>
-                <pre id="drawio-xml"></pre>
-                <a id="download-link" class="btn btn-success" download="output.drawio">Download DrawIO</a>
-            </div>
+            <!-- Include Upload Panel -->
+            {% include 'upload.html' %}
+            <!-- Include Port Configuration Panel -->
+            {% include 'port-config.html' %}
+            <!-- Include Submodule Configuration Panel -->
+            {% include 'submodule-config.html' %}
+            <!-- Include Generate DrawIO Panel -->
+            {% include 'generate-drawio.html' %}
         </main>
     </div>
 
@@ -105,6 +73,9 @@
     function showPanel(panelId) {
         document.querySelectorAll('.panel').forEach(panel => panel.classList.add('d-none'));
         document.getElementById(panelId).classList.remove('d-none');
+        if (panelId === 'port-config') {
+            loadPorts();
+        }
     }
 
     function handleUpload() {
@@ -167,18 +138,6 @@
             alert('No file detected in the drop event.');
         }
     });
-
-    // 解析并跳转逻辑
-    function parseAndContinue() {
-        // 使用全局变量中的文件信息
-        console.log('update uploadedFile@parseAndContinue:', uploadedfilename);
-        if (!uploadedfilename) {
-            alert('Please upload a Verilog file first.');
-            return;
-        }
-        // 假设上传成功后会跳转到解析页面
-        showPanel('port-config');
-    }
 
     // 新增：页面加载时重新设置 uploadedFile
     window.onload = function() {

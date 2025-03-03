@@ -20,3 +20,14 @@ I want to add an flask web ui for this verilog2drawio app, the python function c
  bueatify the index.html, change the left pannel to a navbar, add a footer, add a header, change the right panel to a main
 
  change the height of this page, make it 100% height.
+
+ could we seperate the "upload, port-config, submodule-config, generate-drawio" these 4 panels into seperate file? so the index.html can be short and clean
+
+ in port configuration panel, we should:
+ 1. when loaded, call the parse_verilog function to get the port information, and display it as a list view.
+ 2. user will select the 1 or several ports, and click the group button, then the selected ports will be grouped together.
+ 3. user can edit the group name
+ 4. user can add more groups, and delete groups
+ 5. after click the save button, then the group configuration will be saved
+ 6. then redirect to submodule configuration panel
+

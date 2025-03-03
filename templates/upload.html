@@ -1,0 +1,28 @@
+<div id="upload" class="panel">
+    <h4>Upload Verilog File</h4>
+    <form id="upload-form" method="POST" enctype="multipart/form-data">
+        <div class="drop-zone">
+            Drop Verilog file here or click to upload
+            <input type="file" name="file" id="file-input" hidden onchange="handleUpload()" />
+        </div>
+        <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput(); handleUpload()">Upload</button>
+    </form>
+    {% if filename %}
+    <p>Uploaded File: {{ filename }}</p> <!-- 显示已上传文件信息 -->
+    {% else %}
+    <p>No file uploaded yet.</p> <!-- 提示用户未上传文件 -->
+    {% endif %}
+    <!-- 解析并跳转按钮 -->
+    <button class="btn btn-success mt-3" onclick="parseAndContinue()">Parse and Continue</button>
+</div>
+
+<script>
+    function parseAndContinue() {
+        const filename = new URLSearchParams(window.location.search).get('filename');
+        if (!filename) {
+            alert('Please upload a Verilog file first.');
+            return;
+        }
+        showPanel('port-config');
+    }
+</script>
