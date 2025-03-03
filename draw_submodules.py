@@ -4,15 +4,19 @@ def draw_submodules(root, submodules, module_width, next_id):
     """
     绘制子模块和子模块的端口
     :param root: XML 根元素
-    :param submodules: 子模块列表
+    :param submodules: 子模块列表，每个元素为 {'name': submodule_type, 'instance': submodule_name}
     :param module_width: 模块宽度
     :param next_id: 下一个可用的 ID
     """
     submodule_x = module_width // 2  # 将子模块放置在模块宽度的中间
     submodule_y = 200
     submodule_port_map = {}
-    for submodule_type, submodule_name in submodules:
-        submodule = ET.SubElement(root, 'mxCell', {
+    
+    for submodule in submodules:
+        submodule_type = submodule['name']
+        submodule_name = submodule['instance']
+        
+        submodule_cell = ET.SubElement(root, 'mxCell', {
             'id': str(next_id),
             'value': f'{submodule_type} {submodule_name}',
             'style': 'shape=rectangle;whiteSpace=wrap;html=1;',
@@ -24,7 +28,7 @@ def draw_submodules(root, submodules, module_width, next_id):
             'height': '100'
         })
         # 添加子模块的 mxGeometry
-        submodule_geometry = ET.SubElement(submodule, 'mxGeometry', {
+        submodule_geometry = ET.SubElement(submodule_cell, 'mxGeometry', {
             'x': str(submodule_x),
             'y': str(submodule_y),
             'width': '100',

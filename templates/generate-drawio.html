@@ -1,5 +1,46 @@
+<!-- Generate DrawIO Panel -->
 <div id="generate-drawio" class="panel d-none">
-    <h4>Generated DrawIO XML</h4>
-    <pre id="drawio-xml"></pre>
-    <a id="download-link" class="btn btn-success" download="output.drawio">Download DrawIO</a>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Generate DrawIO File</h5>
+        </div>
+        <div class="card-body">
+            <!-- Selected Submodules Information -->
+            <div class="mb-4">
+                <h6>Selected Submodules</h6>
+                <div id="submodules-info" class="table-responsive">
+                    <!-- Selected submodules will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Port Groups Information -->
+            <div class="mb-4">
+                <h6>Port Groups</h6>
+                <div id="port-groups-info" class="table-responsive">
+                    <!-- Port groups will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Independent Ports Information -->
+            <div class="mb-4">
+                <h6>Independent Ports</h6>
+                <div id="independent-ports-info" class="table-responsive">
+                    <!-- Independent ports will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="text-center">
+                <button class="btn btn-primary" onclick="generateDrawIO()">Generate DrawIO File</button>
+            </div>
+
+            <!-- Download Section -->
+            <div id="download-section" class="mt-4 text-center d-none">
+                <h6>Download Generated File</h6>
+                <a id="download-link" href="#" class="btn btn-success" download>
+                    <i class="fas fa-download"></i> Download DrawIO File
+                </a>
+            </div>
+        </div>
+    </div>
 </div>

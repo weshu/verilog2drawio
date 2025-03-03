@@ -63,3 +63,10 @@ In port-config.html, after port group created, if I change the group name in one
 In submodule-config.html, similar to the port-config, I would like a table to show all the submodule. all the submodule by defauled is selected. this table also support "shift" and "ctrl" key for advanced selection, remember the selected submodule in global variables for future processing in gererate drawio page.
 
 In app.py, it should support route: `/get_submodules?filename=${filename}`, I would like to reuse the parse_verilog(filepath) in get_ports, it should have the submodule information
+
+In generate-drawio.html, I want to show the ports and submodule infomation before click the generate button, and after generated, it should generate a drawio file in download folder, then shows a downlink to the generated drawio xml file
+
+In generate-drawio.html, I need to show 3 info: submodules, ports groups, indepent ports that no in any ports groups.
+
+In generate-drawio.html, the submodules, ports groups, indepent ports information is not shown, add some short debug info to debug it.
+
