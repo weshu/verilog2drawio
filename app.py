@@ -153,7 +153,7 @@ def generate(filename):
     
     try:
         # Generate DrawIO XML and get the file path
-        file_path = generate_drawio(filename, ports, selected_submodules, connections)
+        file_path = generate_drawio(filename, ports, selected_submodules, connections, port_groups)
         
         if file_path is None:
             return jsonify({'error': 'Failed to generate DrawIO file'}), 500

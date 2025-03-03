@@ -14,10 +14,11 @@ generate_pattern = re.compile(r'generate\s*(.*?)\s*endgenerate', re.DOTALL)
 if_pattern = re.compile(r'if\s*\((.*?)\)\s*(begin)?\s*(.*?)\s*(end)', re.DOTALL)
 else_pattern = re.compile(r'else\s*(begin)?\s*(.*?)\s*(end)?', re.DOTALL)
 
-def parse_verilog(file_path):
+def parse_verilog(file_path, gen_smart_check=False):
     """
     解析 Verilog 文件，提取模块信息
     :param file_path: Verilog 文件路径
+    :param gen_smart_check: 是否智能处理 generate 块，如果为 True，则只处理条件为真/假的部分；如果为 False，则处理所有部分
     :return: 模块信息列表，每个元素为 (module_name, ports, submodules, connections) 元组
     """
     with open(file_path, 'r') as file:
@@ -72,13 +73,20 @@ def parse_verilog(file_path):
             })
 
         # 提取子模块信息和连接信息
-        submodules, connections = extract_submodules_and_connections(body, params)
+        submodules, connections = extract_submodules_and_connections(body, params, gen_smart_check)
 
         modules.append((module_name, ports, submodules, connections))
 
     return modules
 
-def extract_submodules_and_connections(body, params):
+def extract_submodules_and_connections(body, params, gen_smart_check=False):
+    """
+    从模块体中提取子模块和连接信息
+    :param body: 模块体文本
+    :param params: 参数字典
+    :param gen_smart_check: 是否智能处理 generate 块
+    :return: (submodules, connections) 元组
+    """
     submodules = []
     connections = []
 
@@ -89,11 +97,12 @@ def extract_submodules_and_connections(body, params):
         # 处理 generate 块之前的文本
         body_to_parse = body[previous_end:generate_match.start()]
         extract_submodules_and_connections_from_body(body_to_parse, submodules, connections)
+        
         # 处理 generate 块内部的文本
         generate_body = copy.deepcopy(generate_match.group(1))  # 使用深拷贝
         if_match = if_pattern.search(generate_body)
 
-        if if_match:
+        if gen_smart_check and if_match:
             condition = if_match.group(1)
             if_body = copy.deepcopy(if_match.group(3))
             else_match = else_pattern.search(generate_body)

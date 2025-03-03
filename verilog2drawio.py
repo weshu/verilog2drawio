@@ -13,20 +13,20 @@ def main(verilog_file_path, debug=False):
     try:
         modules = parse_verilog(verilog_file_path)
         print(f"Parsed {len(modules)} modules from {verilog_file_path}")
-        for module_name, (ports, submodules, connections) in modules.items():
+        for module_name, ports, submodules, connections in modules:
             # 打印模块信息
             print(f"Module: {module_name}")
             # print(f"  Ports: {ports}")
             print(f"  Submodules: {submodules}")
             # print(f"  Connections: {connections}")
+            
+            if debug:
+                print(f"Debug mode enabled, skipping generate_drawio for {module_name}")
+            else:
+                generate_drawio(module_name, ports, submodules, connections)
     except Exception as e:
         print(f"Error parsing file {verilog_file_path}: {e}")
         sys.exit(1)
-
-    if debug:
-        print(f"Debug mode enabled, skipping generate_drawio for {module_name}")
-    else:
-        generate_drawio(module_name, ports, submodules, connections)
 
 def run_tests():
     """

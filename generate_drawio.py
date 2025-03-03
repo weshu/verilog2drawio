@@ -19,13 +19,14 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-def generate_drawio(module_name, ports, submodules, connections):
+def generate_drawio(module_name, ports, submodules, connections, port_groups=None):
     """
     生成 Drawio XML 文件
     :param module_name: 模块名
-    :param ports: 端口字典列表
+    :param ports: 端口列表，每个元素为包含 name, type, width 等信息的字典
     :param submodules: 子模块列表，每个元素为 {'name': submodule_type, 'instance': submodule_name}
     :param connections: 连接信息列表
+    :param port_groups: 端口组列表，每个元素为 {'name': group_name, 'ports': [port_dict]}
     :return: 生成的 DrawIO 文件路径（相对于web根目录的路径）
     """
     # 创建 Drawio XML 结构
@@ -68,13 +69,13 @@ def generate_drawio(module_name, ports, submodules, connections):
     display_module_name = os.path.splitext(os.path.basename(module_name))[0]
 
     # 绘制主模块和主模块的端口
-    next_id, port_map = draw_main_module(root, display_module_name, ports, module_width, module_height)
+    next_id, port_map = draw_main_module(root, display_module_name, ports, module_width, module_height, port_groups)
 
-    # 绘制子模块和子模块的端口
+    # 绘制选中的子模块和子模块的端口
     next_id, submodule_port_map = draw_submodules(root, submodules, module_width, next_id)
 
-    # 绘制连接
-    draw_connections(root, connections, port_map, submodule_port_map, next_id)
+    # 绘制连接, 暂时先不绘制连接
+    # draw_connections(root, connections, port_map, submodule_port_map, next_id)
 
     # 保存 Drawio 文件到 downloads 文件夹
     # 获取项目根目录
@@ -113,8 +114,8 @@ class TestGenerateDrawio(unittest.TestCase):
     def setUp(self):
         self.test_module_name = 'test_module'
         self.test_ports = [
-            {'type': 'input', 'name': 'in1'},
-            {'type': 'output', 'name': 'out1'}
+            {'name': 'in1', 'type': 'input', 'width': 10},
+            {'name': 'out1', 'type': 'output', 'width': 10}
         ]
         self.test_submodules = [{'name': 'sub_module', 'instance': 'sub_inst'}]
         self.test_connections = [('sub_inst', 'in_port', 'in1'), ('sub_inst', 'out_port', 'out1')]
