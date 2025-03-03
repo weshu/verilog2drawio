@@ -73,7 +73,7 @@ def draw_main_module(root, module_name, ports, module_width, module_height, port
                 continue
 
             # 计算组的高度
-            group_height = len(group_ports) * port_height
+            group_height = 2 * port_height
             group_y = input_port_y
 
             # 创建端口组矩形
@@ -82,17 +82,17 @@ def draw_main_module(root, module_name, ports, module_width, module_height, port
                 'value': group['name'],
                 'style': 'shape=rectangle;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;',
                 'vertex': '1',
-                'parent': str(main_module_id),
+                'parent': '1',
                 'x': '50',
                 'y': str(group_y),
-                'width': str(module_width),
+                'width': '10',
                 'height': str(group_height)
             })
             # 添加端口组的 mxGeometry
             group_geometry = ET.SubElement(group_cell, 'mxGeometry', {
                 'x': '50',
                 'y': str(group_y),
-                'width': str(module_width),
+                'width': '10',
                 'height': str(group_height),
                 'as': 'geometry'
             })

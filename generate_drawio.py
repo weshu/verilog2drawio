@@ -74,8 +74,8 @@ def generate_drawio(module_name, ports, submodules, connections, port_groups=Non
     # 绘制选中的子模块和子模块的端口
     next_id, submodule_port_map = draw_submodules(root, submodules, module_width, next_id)
 
-    # 绘制连接, 暂时先不绘制连接
-    # draw_connections(root, connections, port_map, submodule_port_map, next_id)
+    # 绘制连接
+    draw_connections(root, connections, port_map, submodule_port_map, next_id)
 
     # 保存 Drawio 文件到 downloads 文件夹
     # 获取项目根目录

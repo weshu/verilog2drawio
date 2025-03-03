@@ -4,39 +4,47 @@ def draw_submodules(root, submodules, module_width, next_id):
     """
     绘制子模块和子模块的端口
     :param root: XML 根元素
-    :param submodules: 子模块列表，每个元素为 (submodule_type, submodule_name) 元组
-    :param module_width: 模块宽度
+    :param submodules: 子模块列表，每个元素为 {'name': submodule_type, 'instance': submodule_name}
+    :param module_width: 主模块宽度
     :param next_id: 下一个可用的 ID
+    :return: (next_id, submodule_port_map) 元组，其中 submodule_port_map 为子模块端口映射
     """
-    submodule_x = module_width // 2  # 将子模块放置在模块宽度的中间
-    submodule_y = 200
     submodule_port_map = {}
+    submodule_height = 100  # 子模块高度
+    submodule_spacing = 50  # 子模块之间的间距
+    total_height = len(submodules) * (submodule_height + submodule_spacing) - submodule_spacing
+    start_y = 200  # 起始y坐标
     
-    for submodule in submodules:
-        submodule_type = submodule[0]  # 子模块类型
-        submodule_name = submodule[1]  # 子模块实例名
+    # 初始化子模块位置变量
+    submodule_x = module_width // 2  # 将子模块放置在模块宽度的中间
+    submodule_y = 200  # 初始y坐标
+
+    for i, submodule in enumerate(submodules):
+        submodule_type = submodule['name']
+        submodule_name = submodule['instance']
         
+        # 计算子模块的位置
+        x = module_width//2 # 子模块在主模块中间
+        y = start_y + i * (submodule_height + submodule_spacing)
+        
+        # 创建子模块
         submodule_cell = ET.SubElement(root, 'mxCell', {
             'id': str(next_id),
-            'value': f'{submodule_type} {submodule_name}',
-            'style': 'shape=rectangle;whiteSpace=wrap;html=1;',
+            'value': f"{submodule_type}\n{submodule_name}",
+            'style': 'swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;',
             'vertex': '1',
-            'parent': '1',
-            'x': str(submodule_x),
-            'y': str(submodule_y),
-            'width': '100',
-            'height': '100'
+            'parent': '1'
         })
+        
         # 添加子模块的 mxGeometry
         submodule_geometry = ET.SubElement(submodule_cell, 'mxGeometry', {
-            'x': str(submodule_x),
-            'y': str(submodule_y),
-            'width': '100',
-            'height': '100',
+            'x': str(x),
+            'y': str(y),
+            'width': '120',
+            'height': str(submodule_height),
             'as': 'geometry'
         })
-        submodule_port_map[submodule_name] = {}
-        submodule_id = next_id
+        
         next_id += 1
 
         # 先暂时不绘制子模块端口
@@ -79,7 +87,7 @@ def draw_submodules(root, submodules, module_width, next_id):
                     'value': port_name,
                     'style': 'shape=rectangle;whiteSpace=wrap;html=1;',
                     'vertex': '1',
-                    'parent': str(submodule_id),
+                    'parent': str(next_id - 1),  # 使用子模块的ID作为父元素
                     'x': str(port_name_x),  # 修改端口名称的 x 坐标
                     'y': str(y),
                     'width': '10',
