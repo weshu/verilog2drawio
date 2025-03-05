@@ -32,28 +32,31 @@
     let lastSelectedSubmoduleRow = null; // Track last selected row for shift selection
     let allSubmodules = []; // Store all submodules
 
-    function loadSubmodules() {
-        const filename = new URLSearchParams(window.location.search).get('filename');
-        if (!filename) {
-            alert('No filename found in URL.');
-            return;
+    async function loadSubmodules() {
+        try {
+            const filename = window.currentFilename;
+            if (!filename) {
+                alert('No file uploaded. Please upload a file first.');
+                showPanel('upload');
+                return;
+            }
+
+            const response = await fetch(`/get_submodules/${encodeURIComponent(filename)}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.success) {
+                allSubmodules = data.submodules;
+                selectedSubmodules = [...allSubmodules]; // Initially select all submodules
+                renderSubmodules();
+            } else {
+                alert(data.error || 'No submodules found in the response');
+            }
+        } catch (error) {
+            console.error('Error fetching submodules:', error);
+            alert('Error loading submodules: ' + error.message);
         }
-        
-        fetch(`/get_submodules?filename=${filename}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.submodules) {
-                    allSubmodules = data.submodules;
-                    selectedSubmodules = [...allSubmodules]; // Initially select all submodules
-                    renderSubmodules();
-                } else {
-                    alert('No submodules found in the response.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to fetch submodules.');
-            });
     }
 
     function renderSubmodules() {

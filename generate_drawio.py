@@ -19,17 +19,17 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-def generate_drawio(module_name, ports, submodules, connections, port_groups=None):
+def generate_drawio(module_name, ports, submodules, connections, port_groups=None, output_file=None):
     """
     生成 Drawio XML 文件
     :param module_name: 模块名
     :param ports: 端口列表，每个元素为包含 name, type, width 等信息的字典
-    :param submodules: 子模块列表，每个元素为 {'name': submodule_type, 'instance': submodule_name}
+    :param submodules: 子模块列表，每个元素为包含 name, instance 等信息的字典
     :param connections: 连接信息列表
     :param port_groups: 端口组列表，每个元素为 {'name': group_name, 'ports': [port_dict]}
+    :param output_file: 输出文件路径，如果为None则使用默认路径
     :return: 生成的 DrawIO 文件路径（相对于web根目录的路径）
     """
-    # 创建 Drawio XML 结构
     mxfile = ET.Element('mxfile')
     diagram = ET.SubElement(mxfile, 'diagram')
     mxGraphModel = ET.SubElement(diagram, 'mxGraphModel', {
@@ -51,59 +51,43 @@ def generate_drawio(module_name, ports, submodules, connections, port_groups=Non
     })
     root = ET.SubElement(mxGraphModel, 'root')
 
-    # 创建初始的 mxCell 元素
     mxCell_0 = ET.SubElement(root, 'mxCell', {'id': '0'})
     mxCell_1 = ET.SubElement(root, 'mxCell', {'id': '1', 'parent': '0'})
 
-    # 计算模块框的高度和宽度
     port_height = 30
-    input_ports = [port for port in ports if port['type'] == 'input']
-    output_ports = [port for port in ports if port['type'] == 'output']
+    input_ports = [port for port in ports if port['mode'] == 'input']
+    output_ports = [port for port in ports if port['mode'] == 'output']
     input_height = len(input_ports) * port_height
     output_height = len(output_ports) * port_height
     module_height = 50 + max(input_height, output_height)
     max_port_name_length = max(len(port['name']) for port in ports) if ports else 0
     module_width = max_port_name_length * 10 * 2 + 40
 
-    # 移除模块名中的.v扩展名
     display_module_name = os.path.splitext(os.path.basename(module_name))[0]
 
-    # 绘制主模块和主模块的端口
     next_id, port_map = draw_main_module(root, display_module_name, ports, module_width, module_height, port_groups)
-
-    # 绘制选中的子模块和子模块的端口
     next_id, submodule_port_map = draw_submodules(root, submodules, module_width, next_id)
-
-    # 绘制连接
     draw_connections(root, connections, port_map, submodule_port_map, next_id)
 
-    # 保存 Drawio 文件到 downloads 文件夹
-    # 获取项目根目录
-    root_dir = os.path.dirname(os.path.abspath(__file__))
-    # 创建 downloads 目录
-    downloads_dir = os.path.join(root_dir, 'downloads')
-    os.makedirs(downloads_dir, exist_ok=True)
-    
-    # 规范化文件名，移除所有扩展名
-    base_name = os.path.splitext(os.path.basename(module_name))[0]
-    safe_module_name = base_name.replace('/', '_').replace('\\', '_')
-    file_path = os.path.join(downloads_dir, f'{safe_module_name}.drawio')
+    if output_file is None:
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        downloads_dir = os.path.join(root_dir, 'downloads')
+        os.makedirs(downloads_dir, exist_ok=True)
+        
+        base_name = os.path.splitext(os.path.basename(module_name))[0]
+        safe_module_name = base_name.replace('/', '_').replace('\\', '_')
+        file_path = os.path.join(downloads_dir, f'{safe_module_name}.drawio')
+    else:
+        file_path = output_file
     
     tree = ET.ElementTree(mxfile)
     indent(tree.getroot())
     try:
-        # 确保目录存在
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        # 写入文件
         tree.write(file_path, encoding='utf-8', xml_declaration=True)
-        print(f"成功生成 Drawio 文件: {file_path}")
-        # 返回web可访问的路径
-        return f"/downloads/{safe_module_name}.drawio"
+        return f"/downloads/{os.path.basename(file_path)}"
     except Exception as e:
-        print(f"生成 Drawio 文件 {file_path} 时出错: {e}")
-        print(f"当前工作目录: {os.getcwd()}")
-        print(f"目标目录: {downloads_dir}")
-        print(f"完整文件路径: {file_path}")
+        print(f"Error generating DrawIO file: {str(e)}")
         return None
 
 # 单元测试
@@ -114,10 +98,10 @@ class TestGenerateDrawio(unittest.TestCase):
     def setUp(self):
         self.test_module_name = 'test_module'
         self.test_ports = [
-            {'name': 'in1', 'type': 'input', 'width': 10},
-            {'name': 'out1', 'type': 'output', 'width': 10}
+            {'name': 'in1', 'mode': 'input', 'type': 'wire'},
+            {'name': 'out1', 'mode': 'output', 'type': 'wire'}
         ]
-        self.test_submodules = [{'name': 'sub_module', 'instance': 'sub_inst'}]
+        self.test_submodules = [{'name': 'sub_module', 'module_name': 'sub_inst'}]
         self.test_connections = [('sub_inst', 'in_port', 'in1'), ('sub_inst', 'out_port', 'out1')]
 
     def tearDown(self):
@@ -130,7 +114,11 @@ class TestGenerateDrawio(unittest.TestCase):
     def test_generate_drawio(self):
         file_path = generate_drawio(self.test_module_name, self.test_ports, self.test_submodules, self.test_connections)
         self.assertIsNotNone(file_path)
-        self.assertTrue(os.path.exists(file_path))
+        # Get the actual file path from the downloads directory
+        downloads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'downloads')
+        actual_file_path = os.path.join(downloads_dir, f'{self.test_module_name}.drawio')
+        print(f"Checking for file at: {actual_file_path}")
+        self.assertTrue(os.path.exists(actual_file_path))
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,10 +4,10 @@
     let independentPorts = [];
 
     function loadConfiguration() {
-        const filename = new URLSearchParams(window.location.search).get('filename');
-        
-        if (!filename) {
-            alert('No filename found in URL.');
+        if (!window.currentFilename) {
+            console.error('No filename available');
+            alert('Please upload a file first');
+            showPanel('upload');
             return;
         }
 
@@ -18,6 +18,8 @@
                 if (data.groups) {
                     portGroups = data.groups;
                     displayPortGroups();
+                    // After loading port groups, load independent ports
+                    loadIndependentPorts();
                 }
             })
             .catch(error => {
@@ -36,19 +38,28 @@
             .catch(error => {
                 console.error('Error loading selected submodules:', error);
             });
+    }
 
-        // Load independent ports
-        fetch(`/get_independent_ports?filename=${filename}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.ports) {
-                    independentPorts = data.ports;
-                    displayIndependentPorts();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading independent ports:', error);
-            });
+    function loadIndependentPorts() {
+        fetch(`/get_independent_ports/${encodeURIComponent(window.currentFilename)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ port_groups: portGroups })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                independentPorts = data.independent_ports;
+                displayIndependentPorts();
+            } else {
+                console.error('Error loading independent ports:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading independent ports:', error);
+        });
     }
 
     function displayPortGroups() {
@@ -156,9 +167,10 @@
     }
 
     function generateDrawIO() {
-        const filename = new URLSearchParams(window.location.search).get('filename');
-        if (!filename) {
-            alert('No filename found in URL.');
+        if (!window.currentFilename) {
+            console.error('No filename available');
+            alert('Please upload a file first');
+            showPanel('upload');
             return;
         }
 
@@ -168,12 +180,13 @@
             ...independentPorts
         ];
 
-        fetch(`/generate/${filename}`, {
+        fetch('/generate_drawio', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                filename: window.currentFilename,
                 port_groups: portGroups,
                 submodules: selectedSubmodules,
                 ports: allPorts  // Add all ports information
@@ -188,7 +201,6 @@
             }
             // Try to parse as JSON first, if fails, treat as text
             return response.text().then(text => {
-                console.log('Server response:', text);
                 try {
                     return JSON.parse(text);
                 } catch (e) {
@@ -197,20 +209,18 @@
             });
         })
         .then(data => {
-            if (data.file_path) {
+            if (data.download_url) {
                 const downloadLink = document.getElementById('download-link');
-                const filePath = data.file_path;
-                console.log('Setting download link to:', filePath);
-                downloadLink.href = filePath;
+                downloadLink.href = data.download_url;
                 // Remove .v extension from filename for download
-                const baseFilename = filename.replace('.v', '');
+                const baseFilename = window.currentFilename.replace('.v', '');
                 downloadLink.download = baseFilename + '.drawio';
                 
                 // Show download section
                 document.getElementById('download-section').classList.remove('d-none');
             } else {
-                console.error('No file path in response:', data);
-                throw new Error('No file path received from server');
+                console.error('No download URL in response:', data);
+                throw new Error('No download URL received from server');
             }
         })
         .catch(error => {

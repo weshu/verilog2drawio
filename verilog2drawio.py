@@ -1,60 +1,72 @@
-import sys
-import unittest
-from pathlib import Path
-from parse_verilog import parse_verilog
-from generate_drawio import generate_drawio
+#!/usr/bin/env python3
+"""
+Command-line interface for Verilog to DrawIO conversion.
+"""
 
-def main(verilog_file_path, debug=False):
-    """
-    主函数，读取 Verilog 文件并生成 Drawio 文件
-    :param verilog_file_path: Verilog 文件路径
-    :param debug: 是否启用调试模式
-    """
-    try:
-        modules = parse_verilog(verilog_file_path)
-        print(f"Parsed {len(modules)} modules from {verilog_file_path}")
-        for module_name, ports, submodules, connections in modules:
-            # 打印模块信息
-            print(f"Module: {module_name}")
-            # print(f"  Ports: {ports}")
-            print(f"  Submodules: {submodules}")
-            # print(f"  Connections: {connections}")
-            
-            if debug:
-                print(f"Debug mode enabled, skipping generate_drawio for {module_name}")
-            else:
-                generate_drawio(module_name, ports, submodules, connections)
-    except Exception as e:
-        print(f"Error parsing file {verilog_file_path}: {e}")
-        sys.exit(1)
+import sys
+import os
+import argparse
+from parse_verilog import parse_verilog
+import generate_drawio
+import unittest
+import glob
 
 def run_tests():
-    """
-    运行单元测试
-    """
-    suite1 = unittest.TestLoader().loadTestsFromModule(__import__('parse_verilog'))
-    suite2 = unittest.TestLoader().loadTestsFromModule(__import__('generate_drawio'))
-    all_tests = unittest.TestSuite([suite1, suite2])
-    unittest.TextTestRunner().run(all_tests)
+    """Run the unit tests"""
+    suite = unittest.TestLoader().discover('.', pattern='*.py')
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    return 0 if result.wasSuccessful() else 1
+
+def main():
+    parser = argparse.ArgumentParser(description="Convert Verilog module to DrawIO diagram")
+    parser.add_argument('verilog_file', nargs='?', help='Path to Verilog file')
+    parser.add_argument('-o', '--output', help='Output DrawIO file name')
+    parser.add_argument('--test', action='store_true', help='Run unit tests')
+    args = parser.parse_args()
+    
+    if args.test:
+        return run_tests()
+    
+    if not args.verilog_file:
+        parser.error("Please provide a Verilog file or use --test to run unit tests")
+    
+    verilog_file = args.verilog_file
+    
+    if not os.path.exists(verilog_file):
+        print(f"Error: File {verilog_file} not found")
+        return 1
+    
+    parsed_data = parse_verilog(verilog_file)
+    if not parsed_data:
+        print(f"Error parsing file {verilog_file}")
+        return 1
+    
+    if args.output:
+        output_file = args.output
+    else:
+        base_name = os.path.basename(verilog_file)
+        output_file = os.path.join('downloads', base_name.replace('.v', '.drawio'))
+    
+    os.makedirs('downloads', exist_ok=True)
+    
+    print(f"Parsed module: {parsed_data[0]['name']}")
+    print(f"Found {len(parsed_data[0]['ports'])} ports and {len(parsed_data[0]['submodules'])} submodules")
+    
+    try:
+        generate_drawio.generate_drawio(
+            parsed_data[0]['name'],
+            parsed_data[0]['ports'],
+            parsed_data[0]['submodules'],
+            [],  # no connections for command line version
+            None,  # no port groups for command line version
+            output_file
+        )
+        print(f"Successfully generated DrawIO file: {output_file}")
+    except Exception as e:
+        print(f"Error generating DrawIO file: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        return 1
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == '--test':
-        run_tests()
-    elif len(sys.argv) > 1 and sys.argv[1] == '--debug':
-        if len(sys.argv) != 3:
-            print("Usage: python verilog2drawio.py --debug <verilog_file_path>")
-            sys.exit(1)
-        verilog_file_path = sys.argv[2]
-        if not Path(verilog_file_path).is_file():
-            print(f"File not found: {verilog_file_path}")
-            sys.exit(1)
-        main(verilog_file_path, debug=True)
-    elif len(sys.argv) != 2:
-        print("Usage: python verilog2drawio.py <verilog_file_path> or python verilog2drawio.py --test or python verilog2drawio.py --debug <verilog_file_path>")
-        sys.exit(1)
-    else:
-        verilog_file_path = sys.argv[1]
-        if not Path(verilog_file_path).is_file():
-            print(f"File not found: {verilog_file_path}")
-            sys.exit(1)
-        main(verilog_file_path)
+    sys.exit(main())

@@ -4,3 +4,4 @@ test
 *.dtmp
 uploads
 downloads
+.vscode

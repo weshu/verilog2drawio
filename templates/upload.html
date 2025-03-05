@@ -3,9 +3,9 @@
     <form id="upload-form" method="POST" enctype="multipart/form-data">
         <div class="drop-zone">
             Drop Verilog file here or click to upload
-            <input type="file" name="file" id="file-input" hidden onchange="handleUpload()" />
+            <input type="file" name="file" id="file-input" hidden />
         </div>
-        <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput(); handleUpload()">Or Click to Open an Upload Dialog</button>
+        <button type="button" class="btn btn-primary mt-3" onclick="triggerFileInput()">Or Click to Open an Upload Dialog</button>
     </form>
     <div class="upload-status">
         {% if filename %}

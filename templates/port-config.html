@@ -47,6 +47,18 @@
     let ungroupedPorts = [];
     let lastSelectedRow = null; // Track last selected row for shift selection
 
+    // Make loadPorts functions globally accessible
+    window.loadPortsFromData = function(ports) {
+        if (!Array.isArray(ports)) {
+            console.error('Invalid ports data provided:', ports);
+            alert('Invalid ports data provided.');
+            return;
+        }
+        ungroupedPorts = ports;
+        renderPorts();
+        adjustControlPanelPosition();
+    };
+
     // Add window resize handler to adjust control panel position
     window.addEventListener('resize', adjustControlPanelPosition);
 
@@ -57,29 +69,6 @@
             const mainRect = mainPanel.getBoundingClientRect();
             controlPanel.style.right = `${window.innerWidth - mainRect.right + 2}px`;
         }
-    }
-
-    function loadPorts() {
-        const filename = new URLSearchParams(window.location.search).get('filename');
-        if (!filename) {
-            alert('No filename found in URL.');
-            return;
-        }
-        fetch(`/get_ports?filename=${filename}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.ports) {
-                    ungroupedPorts = data.ports;
-                    renderPorts();
-                    adjustControlPanelPosition();
-                } else {
-                    alert('No ports found in the response.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to fetch ports.');
-            });
     }
 
     function renderPorts() {
@@ -153,23 +142,36 @@
 
                     // Clear any existing selections if not using Ctrl/Cmd
                     if (!e.ctrlKey && !e.metaKey) {
-                        rows.forEach(r => r.querySelector('.port-checkbox').checked = false);
+                        rows.forEach(r => {
+                            r.querySelector('.port-checkbox').checked = false;
+                            r.classList.remove('table-primary');
+                        });
                     }
 
                     // Select all rows in range
                     for (let i = start; i <= end; i++) {
                         rows[i].querySelector('.port-checkbox').checked = true;
+                        rows[i].classList.add('table-primary');
                     }
                 }
                 // Handle Ctrl/Cmd + Click
                 else if (e.ctrlKey || e.metaKey) {
                     checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        row.classList.add('table-primary');
+                    } else {
+                        row.classList.remove('table-primary');
+                    }
                     lastSelectedRow = checkbox.checked ? row : null;
                 }
                 // Normal click
                 else {
-                    document.querySelectorAll('.port-checkbox').forEach(cb => cb.checked = false);
+                    document.querySelectorAll('.port-checkbox').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('tr').classList.remove('table-primary');
+                    });
                     checkbox.checked = true;
+                    row.classList.add('table-primary');
                     lastSelectedRow = row;
                 }
 
@@ -198,43 +200,85 @@
         }
     }
 
+    function handlePortSelection(checkbox) {
+        const row = checkbox.closest('tr');
+        if (checkbox.checked) {
+            row.classList.add('table-primary');
+            if (lastSelectedRow && event.shiftKey) {
+                // Handle shift selection
+                const rows = Array.from(document.querySelectorAll('#port-list tr'));
+                const start = rows.indexOf(lastSelectedRow);
+                const end = rows.indexOf(row);
+                const [min, max] = [Math.min(start, end), Math.max(start, end)];
+                for (let i = min; i <= max; i++) {
+                    rows[i].querySelector('input[type="checkbox"]').checked = true;
+                    rows[i].classList.add('table-primary');
+                }
+            }
+            lastSelectedRow = row;
+        } else {
+            row.classList.remove('table-primary');
+        }
+    }
+
     function groupPorts() {
-        const selectedPorts = Array.from(document.querySelectorAll('.port-checkbox:checked'))
-            .map(checkbox => checkbox.closest('tr').dataset.portName);
-        
-        if (selectedPorts.length === 0) {
-            alert('Please select at least one port to group.');
+        const selectedRows = document.querySelectorAll('#port-list tr.table-primary');
+        if (selectedRows.length === 0) {
+            alert('Please select ports to group');
             return;
         }
-        
-        const groupName = `grp_id_${portGroups.length + 1}`;
-        const ports = selectedPorts.map(portName => ungroupedPorts.find(port => port.name === portName));
-        portGroups.push({ name: groupName, ports });
-        ungroupedPorts = ungroupedPorts.filter(port => !selectedPorts.includes(port.name));
-        renderPorts();
+
+        // Generate a default group name based on existing groups
+        const defaultGroupName = `Group_${portGroups.length + 1}`;
+
+        selectedRows.forEach(row => {
+            // Change the input to be editable
+            const inputCell = row.querySelector('td:first-child');
+            inputCell.innerHTML = `
+                <input type="text" class="form-control form-control-sm group-name" 
+                       value="${defaultGroupName}" 
+                       data-group-index="${portGroups.length}"
+                       onchange="editGroupName(this)">
+            `;
+            row.classList.remove('table-primary');
+            row.querySelector('input[type="checkbox"]').checked = false;
+        });
+
+        // Update portGroups array
+        const ports = Array.from(selectedRows).map(row => ({
+            name: row.querySelector('td:nth-child(2)').textContent,
+            mode: row.querySelector('td:nth-child(3)').textContent.split(' ')[0],
+            type: row.querySelector('td:nth-child(3)').textContent.split(' ')[1]
+        }));
+
+        portGroups.push({
+            name: defaultGroupName,
+            ports: ports
+        });
     }
 
     function ungroupPorts() {
-        const selectedPorts = Array.from(document.querySelectorAll('.port-checkbox:checked'))
-            .map(checkbox => checkbox.closest('tr').dataset.portName);
-        
-        if (selectedPorts.length === 0) {
-            alert('Please select at least one port to ungroup.');
+        const selectedRows = document.querySelectorAll('#port-list tr.table-primary');
+        if (selectedRows.length === 0) {
+            alert('Please select ports to ungroup');
             return;
         }
 
-        portGroups = portGroups.map(group => {
-            group.ports = group.ports.filter(port => !selectedPorts.includes(port.name));
-            return group;
-        }).filter(group => group.ports.length > 0);
-
-        selectedPorts.forEach(portName => {
-            const port = portGroups.flatMap(group => group.ports).find(p => p.name === portName);
-            if (port) {
-                ungroupedPorts.push(port);
-            }
+        selectedRows.forEach(row => {
+            row.querySelector('td:first-child').textContent = '';
+            row.classList.remove('table-primary');
+            row.querySelector('input[type="checkbox"]').checked = false;
         });
-        renderPorts();
+
+        // Update portGroups array
+        const selectedPortNames = Array.from(selectedRows).map(row => 
+            row.querySelector('td:nth-child(2)').textContent
+        );
+
+        portGroups = portGroups.map(group => ({
+            ...group,
+            ports: group.ports.filter(port => !selectedPortNames.includes(port.name))
+        })).filter(group => group.ports.length > 0);
     }
 
     function editGroupName(inputElement) {
@@ -253,6 +297,7 @@
     }
 
     function saveGroups() {
+        // Save port groups to server
         fetch('/save_groups', {
             method: 'POST',
             headers: {
@@ -265,8 +310,13 @@
             if (data.success) {
                 showPanel('submodule-config');
             } else {
-                alert('Failed to save groups.');
+                alert('Failed to save port groups');
             }
+        })
+        .catch(error => {
+            console.error('Error saving groups:', error);
+            alert('Failed to save port groups');
         });
     }
+
 </script>

@@ -106,7 +106,7 @@ def draw_main_module(root, module_name, ports, module_width, module_height, port
         if port['name'] in grouped_ports:
             continue
 
-        port_type = port['type']
+        port_type = port['mode']
         port_name = port['name']
         if port_type == 'input':
             x = 50-5

@@ -1,0 +1,3 @@
+[submodule "hdlparse"]
+	path = hdlparse
+	url = https://github.com/weshu/hdlparse.git

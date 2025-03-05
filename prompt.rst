@@ -70,3 +70,6 @@ In generate-drawio.html, I need to show 3 info: submodules, ports groups, indepe
 
 In generate-drawio.html, the submodules, ports groups, indepent ports information is not shown, add some short debug info to debug it.
 
+I hope this project use https://github.com/weshu/hdlparse to parse the verilog file, and get the submodules and ports information. advice how I add this package to the project
+
+I get the hdlparse package at the hdlparse folder, change the app.py to use this package to parse the verilog file, modify the parse_verilog.py and make it a wrapper of the hdlparse, and modified the code that impacted, make the app.py and verilog2drawio.py still works.

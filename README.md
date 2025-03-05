@@ -11,13 +11,19 @@ A tool that converts Verilog modules to DrawIO diagrams, with both command-line 
 - Web interface for interactive diagram generation
 - Real-time diagram preview
 - Download generated diagrams
+- Accurate Verilog parsing using hdlparse
 
 ## Installation
 
-1. Clone the repository:
+1. Clone the repository with submodules:
 ```bash
-git clone https://github.com/yourusername/verilog2drawio.git
+git clone --recursive https://github.com/weshu/verilog2drawio.git
 cd verilog2drawio
+```
+
+If you've already cloned the repository without submodules, run:
+```bash
+git submodule update --init --recursive
 ```
 
 2. Install required Python packages:
@@ -57,11 +63,12 @@ verilog2drawio/
 ├── draw_submodules.py     # Submodule drawing functions
 ├── draw_connections.py    # Connection drawing functions
 ├── parse_verilog.py       # Verilog parsing functions
-├── static/               # Static web files
+├── hdlparse/              # hdlparse submodule for Verilog parsing
+├── static/                # Static web files
 │   ├── css/
 │   └── js/
-├── templates/            # HTML templates
-└── downloads/           # Generated DrawIO files
+├── templates/             # HTML templates
+└── downloads/             # Generated DrawIO files
 ```
 
 ## Dependencies
@@ -80,3 +87,4 @@ verilog2drawio/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
